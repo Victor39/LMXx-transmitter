@@ -26,6 +26,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>src/bitops</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>src/c674x</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -39,6 +44,26 @@
 			<name>src/lcdkOMAPL138</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>src/bitops/bitbyterepacker.cpp</name>
+			<type>1</type>
+			<locationURI>BITOPS_LOC/bitbyterepacker.cpp</locationURI>
+		</link>
+		<link>
+			<name>src/bitops/bitbyterepacker.h</name>
+			<type>1</type>
+			<locationURI>BITOPS_LOC/bitbyterepacker.h</locationURI>
+		</link>
+		<link>
+			<name>src/bitops/bitfield.h</name>
+			<type>1</type>
+			<locationURI>BITOPS_LOC/bitfield.h</locationURI>
+		</link>
+		<link>
+			<name>src/bitops/smartbfarray.h</name>
+			<type>1</type>
+			<locationURI>BITOPS_LOC/smartbfarray.h</locationURI>
 		</link>
 		<link>
 			<name>src/c674x/cache.c</name>
@@ -332,6 +357,10 @@
 		</link>
 	</linkedResources>
 	<variableList>
+		<variable>
+			<name>BITOPS_LOC</name>
+			<value>file:/D:/Projects/radio_modules/common/bitops</value>
+		</variable>
 		<variable>
 			<name>STARTER_WARE_LOC</name>
 			<value>file:/C:/ti/OMAPL138_StarterWare_1_10_04_01</value>
