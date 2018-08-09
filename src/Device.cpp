@@ -8,7 +8,24 @@
 #include "interrupt.h"
 #include "gpio.h"
 
-namespace Lmx2571 {
+namespace lmx2571 {
+
+	const uint16_t DEFV_REGISTER[REGISTER_ARR_SIZE] = {
+	// 0 ... 9
+			0x0003, 0x0000, 0x0000, 0x0000, 0x0028, 0x0101, 0x8584, 0x10A4, 0x0010, 0x0000,
+			// 10 ... 19
+			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+			// 20 ... 29
+			0x0028, 0x0101, 0x8584, 0x10A4, 0x0010, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+			// 30 ... 39
+			0x0000, 0x0000, 0x0000, 0x0000, 0x1000, 0x0647, 0x0000, 0x0000, 0x0000, 0x11F0,
+			// 40 ... 49
+			0x101C, 0x0810, 0x0210, 0x0000, 0x0000, 0x0000, 0x001A, 0x0000, 0x0000, 0x0000,
+			// 50 ... 59
+			0x0000, 0x0000, 0x0000, 0x2802, 0x0000, 0x0000, 0x0000, 0x0000, 0x0C00, 0x0000,
+			// 60
+			0x4000};
+
 	/******************************************************************************
 	 **                      INTERNAL MACRO DEFINITIONS
 	 *******************************************************************************/
@@ -23,7 +40,6 @@ namespace Lmx2571 {
 	static void SetUpSPI (unsigned char cs, unsigned char dcs);
 	void SPIIsr (void);
 	static void SpiTransfer (unsigned char cs);
-	static void GetStatusCommand (unsigned char cs);
 	static void enableLatchMICROWIRE ();
 
 	/******************************************************************************
@@ -221,6 +237,36 @@ namespace Lmx2571 {
 		SpiTransfer(0);
 	}
 
+	void Device::setTxMode () {
+	}
+
+	void Device::setRxMode () {
+	}
+
+	bool Device::isTxMode () {
+	}
+
+	void Device::isRxMode () {
+	}
+
+	void Device::setTxFrequency (const uint32_t constUnsignedInt) {
+
+		// TX R-divider
+		txRmult = 4;
+		txPostDivider = 1;
+		txPreDivider = 1;
+
+		// TX N-divider
+		txPreScaler = 1; // 0 = Divide by 2; 1 = Divide by 4
+		txNinteger = 15; // 0 ... 1023
+		txNden = 8388608; // 0 ... (2^24)-1
+		txNnum = 0; // 0 ... (2^24)-1
+
+		//
+		txChDiv1 = 0; // 0 = Divide by 4; 1 = Divide by 5; 2 = Divide by 6; 3 = Divide by 7
+		txChDiv2 = 6; // 0 = Divide by 1; 1 = Divide by 2; 2 = Divide by 4; . 6 = Divide by 64
+	}
+
 	Device::Device () {
 		/* The Local PSC number for GPIO is 3. GPIO belongs to PSC1 module.*/
 		PSCModuleControl(SOC_PSC_1_REGS, HW_PSC_GPIO, PSC_POWERDOMAIN_ALWAYS_ON,
@@ -250,9 +296,12 @@ namespace Lmx2571 {
 		/* Configuring and enabling the SPI0 instance. */
 		SetUpSPI((1 << CS), 0/*(1 << CS)*/);
 
+		//
+		memcpy(m_registers, DEFV_REGISTER, REGISTER_ARR_SIZE*(sizeof(m_registers[0])));
+
 	}
 
-	void Device::setRegister (const uint8_t adrr, const uint16_t data) {
+	void Device::writeRegister (const uint8_t adrr, const uint16_t data) {
 
 		m_txMsg().rw = 0;
 		m_txMsg().address = adrr;
@@ -261,7 +310,7 @@ namespace Lmx2571 {
 		sendCommand(m_txMsg.sizeBytes());
 	}
 
-	uint16_t Device::getRegister (const uint8_t adrr) {
+	uint16_t Device::readRegister (const uint8_t adrr) {
 		m_txMsg().rw = 1;
 		m_txMsg().address = adrr;
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <smartbfarray.h>
 
-namespace Lmx2571 {
+namespace lmx2571 {
 
 	class Message {
 	public:
