@@ -8,6 +8,15 @@
 #include "interrupt.h"
 #include "gpio.h"
 
+
+//#include <ti/sysbios/BIOS.h>
+//#include <xdc/runtime/System.h>
+//#include "xdc/runtime/log.h"
+//#include "mcbsp/include/Mcbsp.h"
+//#include "platforms/evm6748/Mcbsp_evmInit.h"
+//#include <ti/sdo/edma3/drv/edma3_drv.h>
+
+
 namespace lmx2571 {
 
 	const uint16_t DEFV_REGISTER[REGISTER_ARR_SIZE] = {
@@ -31,6 +40,22 @@ namespace lmx2571 {
 	 *******************************************************************************/
 #define CHAR_LENGTH             0x8
 #define CS						4
+
+
+//	/*
+//	 * Mcbsp device params. To be filled in userMcbspInit function which
+//	 * is called before driver creation
+//	 */
+//	Mcbsp_Params     mcbspParams;
+//
+//	/*
+//	 * Mcbsp sample rate configuration parameters.
+//	 */
+//	Mcbsp_srgConfig  mcbspSrgParams;
+//
+//	/* Handle to the EDMA driver instance                                         */
+//	EDMA3_DRV_Handle hEdma;
+
 
 	/******************************************************************************
 	 **                      INTERNAL FUNCTION PROTOTYPES
@@ -268,6 +293,10 @@ namespace lmx2571 {
 	}
 
 	Device::Device () {
+
+
+		// GPIO
+
 		/* The Local PSC number for GPIO is 3. GPIO belongs to PSC1 module.*/
 		PSCModuleControl(SOC_PSC_1_REGS, HW_PSC_GPIO, PSC_POWERDOMAIN_ALWAYS_ON,
 		PSC_MDCTL_NEXT_ENABLE);
@@ -277,6 +306,9 @@ namespace lmx2571 {
 
 		/* Sets the pin 133 (GP8[4]) as output.*/
 		GPIODirModeSet(SOC_GPIO_0_REGS, 133, GPIO_DIR_OUTPUT);
+
+
+		// SPI
 
 		/* Waking up the SPI0 instance. */
 		PSCModuleControl(SOC_PSC_0_REGS, HW_PSC_SPI0, PSC_POWERDOMAIN_ALWAYS_ON,
@@ -295,6 +327,12 @@ namespace lmx2571 {
 
 		/* Configuring and enabling the SPI0 instance. */
 		SetUpSPI((1 << CS), 0/*(1 << CS)*/);
+
+
+//		// MCBSP
+//
+//		 configureMcbsp();
+
 
 		//
 		memcpy(m_registers, DEFV_REGISTER, REGISTER_ARR_SIZE*(sizeof(m_registers[0])));
@@ -321,5 +359,32 @@ namespace lmx2571 {
 
 		return m_rxMsg().data.value<uint16_t>();
 	}
+
+
+
+//	/*
+//	 * Mcbsp init function called when creating the driver.
+//	 */
+//	void mcbspUserInit()
+//	{
+//	    Mcbsp_init();
+//
+//	    /* configure the SRG properties                                           */
+//	    /* use Mcbsp intenal clock      */
+//	    mcbspSrgParams.srgInputClkMode = Mcbsp_SrgClk_CLKCPU;
+//	    /* 1 bit width framesync        */
+//	    mcbspSrgParams.srgFrmPulseWidth = 0;
+//	    /* internal clock frequncy      */
+//	    mcbspSrgParams.srgrInputFreq = 150000000;
+//
+//	    mcbspParams 				= Mcbsp_PARAMS;
+//	    mcbspParams.mode 			= Mcbsp_DevMode_McBSP;
+//	    mcbspParams.opMode 			= Mcbsp_OpMode_DMAINTERRUPT;
+//	    mcbspParams.enablecache 	= TRUE;
+//	    mcbspParams.emulationMode 	= Mcbsp_EmuMode_FREE;
+//	    mcbspParams.dlbMode 		= Mcbsp_Loopback_DISABLE;
+//	    mcbspParams.clkStpMode 		= Mcbsp_ClkStpMode_DISABLED;
+//	    mcbspParams.srgSetup 		= &mcbspSrgParams;
+//	}
 
 } /* namespace Lmx2571 */

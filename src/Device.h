@@ -113,13 +113,13 @@ namespace lmx2571 {
 		void write_PLL_DEN_F1 (const uint32_t value) {
 			setBits(&m_registers[3], 0, value, 0, 16);
 			writeRegister(3, m_registers[3]);
-			setBits(&m_registers[1], 8, value, 16, 8);
+			setBits(&m_registers[1], 8, value >> 16, 0, 8);
 			writeRegister(1, m_registers[1]);
 		}
 		void write_PLL_NUM_F1 (const uint32_t value) {
 			setBits(&m_registers[2], 0, value, 0, 16);
 			writeRegister(2, m_registers[2]);
-			setBits(&m_registers[1], 0, value, 16, 8);
+			setBits(&m_registers[1], 0, value >> 16, 0, 8);
 			writeRegister(1, m_registers[1]);
 		}
 
@@ -191,13 +191,13 @@ namespace lmx2571 {
 		void write_PLL_DEN_F2 (const uint32_t value) {
 			setBits(&m_registers[19], 0, value, 0, 16);
 			writeRegister(19, m_registers[19]);
-			setBits(&m_registers[17], 8, value, 16, 8);
+			setBits(&m_registers[17], 8, value >> 16, 0, 8);
 			writeRegister(17, m_registers[17]);
 		}
 		void write_PLL_NUM_F2 (const uint32_t value) {
 			setBits(&m_registers[18], 0, value, 0, 16);
 			writeRegister(18, m_registers[18]);
-			setBits(&m_registers[17], 0, value, 16, 8);
+			setBits(&m_registers[17], 0, value >> 16, 0, 8);
 			writeRegister(17, m_registers[17]);
 		}
 
