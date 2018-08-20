@@ -57,7 +57,6 @@
 									<listOptionValue builtIn="false" value="${STARTER_WARE_LOC}/include/c674x/omapl138"/>
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}/src/bitops"/>
 									<listOptionValue builtIn="false" value="${BITOPS_LOC}"/>
-									<listOptionValue builtIn="false" value="${SYSBIOS_LOC}/"/>
 									<listOptionValue builtIn="false" value="${PROJECT_LOC}/src/mcbsp/"/>
 								</option>
 								<option id="com.ti.ccstudio.buildDefinitions.C6000_8.2.compilerID.DEBUGGING_MODEL.991092801" name="Debugging model" superClass="com.ti.ccstudio.buildDefinitions.C6000_8.2.compilerID.DEBUGGING_MODEL" value="com.ti.ccstudio.buildDefinitions.C6000_8.2.compilerID.DEBUGGING_MODEL.SYMDEBUG__DWARF" valueType="enumerated"/>

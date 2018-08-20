@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <math.h>
 #include <src/Device.h>
 #include "soc_OMAPL138.h"
 #include "hw_psc_OMAPL138.h"
@@ -8,16 +9,62 @@
 #include "interrupt.h"
 #include "gpio.h"
 
-
-//#include <ti/sysbios/BIOS.h>
-//#include <xdc/runtime/System.h>
-//#include "xdc/runtime/log.h"
-//#include "mcbsp/include/Mcbsp.h"
-//#include "platforms/evm6748/Mcbsp_evmInit.h"
-//#include <ti/sdo/edma3/drv/edma3_drv.h>
-
-
 namespace lmx2571 {
+
+#define MIN_TX_FREQ	(30000000UL)
+#define MAX_TX_FREQ	(108000000UL)
+#define TX_FREQ_SPACING	(12500UL)
+
+#define MIN_TX_FREQ_INDEX (0)
+#define MAX_TX_FREQ_INDEX ((MAX_TX_FREQ - MIN_TX_FREQ) / TX_FREQ_SPACING)
+
+// Range 30,0 - 33,6 MHz
+#define LOW_TX_FREQ_RANGE1 (30000000UL)
+#define HIGH_TX_FREQ_RANGE1 (33600000UL)
+#define LOW_TX_FREQ_INDEX_RANGE1 ((LOW_TX_FREQ_RANGE1 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+#define HIGH_TX_FREQ_INDEX_RANGE1 ((HIGH_TX_FREQ_RANGE1 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+
+// Range 33,6125 - 40 MHz
+#define LOW_TX_FREQ_RANGE2 (33612500UL)
+#define HIGH_TX_FREQ_RANGE2 (40000000UL)
+#define LOW_TX_FREQ_INDEX_RANGE2 ((LOW_TX_FREQ_RANGE2 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+#define HIGH_TX_FREQ_INDEX_RANGE2 ((HIGH_TX_FREQ_RANGE2 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+
+// Range  40,0125…46 MHz
+#define LOW_TX_FREQ_RANGE3 (40012500UL)
+#define HIGH_TX_FREQ_RANGE3 (46000000UL)
+#define LOW_TX_FREQ_INDEX_RANGE3 ((LOW_TX_FREQ_RANGE3 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+#define HIGH_TX_FREQ_INDEX_RANGE3 ((HIGH_TX_FREQ_RANGE3 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+
+// Range 46,0125…54 MHz
+#define LOW_TX_FREQ_RANGE4 (46012500UL)
+#define HIGH_TX_FREQ_RANGE4 (54000000UL)
+#define LOW_TX_FREQ_INDEX_RANGE4 ((LOW_TX_FREQ_RANGE4 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+#define HIGH_TX_FREQ_INDEX_RANGE4 ((HIGH_TX_FREQ_RANGE4 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+
+// Range 54,0125…67,2 MHz
+#define LOW_TX_FREQ_RANGE5 (54012500UL)
+#define HIGH_TX_FREQ_RANGE5 (67200000UL)
+#define LOW_TX_FREQ_INDEX_RANGE5 ((LOW_TX_FREQ_RANGE5 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+#define HIGH_TX_FREQ_INDEX_RANGE5 ((HIGH_TX_FREQ_RANGE5 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+
+// Range 62,2125…78,0 MHz
+#define LOW_TX_FREQ_RANGE6 (67212500UL)
+#define HIGH_TX_FREQ_RANGE6 (78000000UL)
+#define LOW_TX_FREQ_INDEX_RANGE6 ((LOW_TX_FREQ_RANGE6 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+#define HIGH_TX_FREQ_INDEX_RANGE6 ((HIGH_TX_FREQ_RANGE6 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+
+// Range 78,0125…92 MHz
+#define LOW_TX_FREQ_RANGE7 (78012500UL)
+#define HIGH_TX_FREQ_RANGE7 (92000000UL)
+#define LOW_TX_FREQ_INDEX_RANGE7 ((LOW_TX_FREQ_RANGE7 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+#define HIGH_TX_FREQ_INDEX_RANGE7 ((HIGH_TX_FREQ_RANGE7 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+
+// Range 92,0125…108 MHz
+#define LOW_TX_FREQ_RANGE8 (92012500UL)
+#define HIGH_TX_FREQ_RANGE8 (108000000UL)
+#define LOW_TX_FREQ_INDEX_RANGE8 ((LOW_TX_FREQ_RANGE8 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+#define HIGH_TX_FREQ_INDEX_RANGE8 ((HIGH_TX_FREQ_RANGE8 - MIN_TX_FREQ) / TX_FREQ_SPACING)
 
 	const uint16_t DEFV_REGISTER[REGISTER_ARR_SIZE] = {
 	// 0 ... 9
@@ -41,31 +88,11 @@ namespace lmx2571 {
 #define CHAR_LENGTH             0x8
 #define CS						4
 
-
-//	/*
-//	 * Mcbsp device params. To be filled in userMcbspInit function which
-//	 * is called before driver creation
-//	 */
-//	Mcbsp_Params     mcbspParams;
-//
-//	/*
-//	 * Mcbsp sample rate configuration parameters.
-//	 */
-//	Mcbsp_srgConfig  mcbspSrgParams;
-//
-//	/* Handle to the EDMA driver instance                                         */
-//	EDMA3_DRV_Handle hEdma;
-
-
 	/******************************************************************************
 	 **                      INTERNAL FUNCTION PROTOTYPES
 	 *******************************************************************************/
-	static void SPIConfigDataFmtReg (unsigned int dataFormat);
-	static void SetUpInt (void);
-	static void SetUpSPI (unsigned char cs, unsigned char dcs);
 	void SPIIsr (void);
 	static void SpiTransfer (unsigned char cs);
-	static void enableLatchMICROWIRE ();
 
 	/******************************************************************************
 	 **                      INTERNAL VARIABLE DEFINITIONS
@@ -79,54 +106,6 @@ namespace lmx2571 {
 	unsigned char *p_tx;
 	volatile unsigned char *p_rx;
 	volatile unsigned char StatusResponseMessage[10];
-
-	/*
-	 ** Configures ARM interrupt controller to generate SPI interrupt
-	 **
-	 */
-	static void SetUpInt (void) {
-// Setup the ARM or DSP interrupt controller
-
-#ifdef _TMS320C6X
-// Initialize the DSP interrupt controller
-		IntDSPINTCInit();
-
-// Register the ISR in the vector table
-		IntRegister(C674X_MASK_INT4, SPIIsr);
-
-// Map system interrupt to the DSP maskable interrupt
-		IntEventMap(C674X_MASK_INT4, SYS_INT_SPI0_INT);
-
-// Enable the DSP maskable interrupt
-		IntEnable(C674X_MASK_INT4);
-
-// Enable DSP interrupts globally
-		IntGlobalEnable();
-#else
-		/* Initialize the ARM Interrupt Controller.*/
-		IntAINTCInit();
-
-		/* Register the ISR in the Interrupt Vector Table.*/
-		IntRegister(SYS_INT_SPINT1, SPIIsr);
-
-		/* Set the channnel number 2 of AINTC for system interrupt 56.
-		 * Channel 2 is mapped to IRQ interrupt of ARM9.
-		 */
-		IntChannelSet(SYS_INT_SPINT1, 2);
-
-		/* Enable the System Interrupts for AINTC.*/
-		IntSystemEnable(SYS_INT_SPINT1);
-
-		/* Enable IRQ in CPSR.*/
-		IntMasterIRQEnable();
-
-		/* Enable the interrupts in GER of AINTC.*/
-		IntGlobalEnable();
-
-		/* Enable the interrupts in HIER of AINTC.*/
-		IntIRQEnable();
-#endif
-	}
 
 	/*
 	 ** Data transmission and receiption SPIIsr
@@ -164,65 +143,11 @@ namespace lmx2571 {
 				if (!rx_len) {
 					flag = 0;
 					SPIIntDisable(SOC_SPI_0_REGS, SPI_RECV_INT);
-					enableLatchMICROWIRE();
 				}
 			}
 
 			intCode = SPIInterruptVectorGet(SOC_SPI_0_REGS);
 		}
-	}
-
-	/*
-	 ** Configures SPI Controller
-	 **
-	 */
-	static void SetUpSPI (unsigned char cs, unsigned char dcs) {
-		SPIReset(SOC_SPI_0_REGS);
-
-		SPIOutOfReset(SOC_SPI_0_REGS);
-
-		SPIModeConfigure(SOC_SPI_0_REGS, SPI_MASTER_MODE);
-
-		SPIClkConfigure(SOC_SPI_0_REGS, 150000000, 1000000, SPI_DATA_FORMAT0);
-
-		/* value to configure SMIO,SOMI,CLK and CS pin as functional pin */
-		unsigned int controlRegIdx = 0;
-		unsigned int controlReg0 = 0x00000E00;
-		controlReg0 |= cs;
-		SPIPinControl(SOC_SPI_0_REGS, controlRegIdx, 0, &controlReg0);
-
-		SPIDefaultCSSet(SOC_SPI_0_REGS, dcs);
-
-		/* Configures SPI Data Format Register */
-		SPIConfigDataFmtReg(SPI_DATA_FORMAT0);
-
-		/* Selects the SPI Data format register to used and Sets CSHOLD
-		 * to assert CS pin(line)
-		 */
-		SPIDat1Config(SOC_SPI_0_REGS, (SPI_CSHOLD | SPI_DATA_FORMAT0), cs);
-
-		/* map interrupts to interrupt line INT1 */
-		SPIIntLevelSet(SOC_SPI_0_REGS, SPI_RECV_INTLVL | SPI_TRANSMIT_INTLVL);
-
-		/* Enable SPI communication */
-		SPIEnable(SOC_SPI_0_REGS);
-	}
-
-	/*
-	 ** Configures Data Format register of SPI
-	 **
-	 */
-	static void SPIConfigDataFmtReg (unsigned int dataFormat) {
-		/* Configures the polarity and phase of SPI clock */
-		SPIConfigClkFormat(SOC_SPI_0_REGS, (SPI_CLK_POL_HIGH | SPI_CLK_INPHASE), dataFormat);
-//	SPIConfigClkFormat(SOC_SPI_0_REGS, (SPI_CLK_POL_LOW | SPI_CLK_OUTOFPHASE), dataFormat);
-//	SPIConfigClkFormat(SOC_SPI_0_REGS, (SPI_CLK_POL_LOW | SPI_CLK_INPHASE), dataFormat);
-
-		/* Configures SPI to transmit MSB bit First during data transfer */
-		SPIShiftMsbFirst(SOC_SPI_0_REGS, dataFormat);
-
-		/* Sets the Charcter length */
-		SPICharLengthSet(SOC_SPI_0_REGS, CHAR_LENGTH, dataFormat);
 	}
 
 	/*
@@ -240,19 +165,6 @@ namespace lmx2571 {
 		SPIDat1Config(SOC_SPI_0_REGS, SPI_DATA_FORMAT0, cs);
 	}
 
-	static void enableLatchMICROWIRE () {
-
-		const unsigned int timeout = 2;
-		GPIOPinWrite(SOC_GPIO_0_REGS, 133, GPIO_PIN_HIGH);
-		int i;
-		for (i = 0; i < timeout; ++i) {
-			asm(" nop");
-		}
-		GPIOPinWrite(SOC_GPIO_0_REGS, 133, GPIO_PIN_LOW);
-	}
-
-////
-///
 	static void sendCommand (uint16_t length) {
 
 		tx_len = length;
@@ -263,50 +175,327 @@ namespace lmx2571 {
 	}
 
 	void Device::setTxMode () {
+		write_PLL_N_PRE_F1_R4(1); // 0 = Divide by 2; 1 = Divide by 4
+		setTxFrequencyBy(0);
 	}
 
-	void Device::setRxMode () {
+	bool Device::setTxFrequencyBy (const uint32_t freqIndex) {
+
+		bool result = true;
+
+		// R-divider
+		uint16_t Rmult; // 0 = Reserved; 1 = Bypass; 2 = 2x ... 13 = 13x; 14-31 = Reserved (must be greater than Pre-divider value)
+		uint8_t RpreDivider; // 0 ... 255
+		uint8_t RpostDivider; // 0 ... 255 ???
+
+		// N-divider
+		uint16_t Ninteger; // 0 ... 1023
+		uint32_t Nden; // 0 ... (2^24)-1
+		uint32_t Nnum; // 0 ... (2^24)-1
+
+		// Out-divider
+		uint8_t chDiv1; // 0 = Divide by 4; 1 = Divide by 5; 2 = Divide by 6; 3 = Divide by 7
+		uint8_t chDiv2; // 0 = Divide by 1; 1 = Divide by 2; 2 = Divide by 4; . 6 = Divide by 64
+
+		if ((LOW_TX_FREQ_INDEX_RANGE1 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE1)) {
+			// R-divider
+			RpreDivider = 4;
+			Rmult = 5;
+			RpostDivider = 5;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE1);
+			Ninteger = 240 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 1; // 5
+			chDiv2 = 5; // 32
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE2 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE2)) {
+			// R-divider
+			RpreDivider = 5;
+			Rmult = 6;
+			RpostDivider = 6;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE2) + 9;
+			Ninteger = 268 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 0; // 4
+			chDiv2 = 5; // 32
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE3 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE3)) {
+			// R-divider
+			RpreDivider = 4;
+			Rmult = 7;
+			RpostDivider = 10;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE3) + 1;
+			Ninteger = 320 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 3; // 7
+			chDiv2 = 4; // 16
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE4 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE4)) {
+			// R-divider
+			RpreDivider = 4;
+			Rmult = 6;
+			RpostDivider = 10;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE4) + 1;
+			Ninteger = 368 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 2; // 6
+			chDiv2 = 4; // 16
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE5 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE5)) {
+			// R-divider
+			RpreDivider = 4;
+			Rmult = 5;
+			RpostDivider = 10;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE5) + 1;
+			Ninteger = 432 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 1; // 5
+			chDiv2 = 4; // 16
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE6 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE6)) {
+			// R-divider
+			RpreDivider = 1;
+			Rmult = 1;
+			RpostDivider = 10;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE6) + 7;
+			Ninteger = 537 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 0; // 4
+			chDiv2 = 4; // 16
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE7 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE7)) {
+			// R-divider
+			RpreDivider = 2;
+			Rmult = 7;
+			RpostDivider = 40;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE7) + 1;
+			Ninteger = 624 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 3; // 7
+			chDiv2 = 3; // 8
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE8 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE8)) {
+			// R-divider
+			RpreDivider = 1;
+			Rmult = 3;
+			RpostDivider = 40;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE8) + 1;
+			Ninteger = 736 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 2; // 6
+			chDiv2 = 3; // 8
+		}
+		else {
+			result = false;
+		}
+
+		if (result) {
+			set_PLL_R_PRE_F1_R5(RpreDivider);
+			set_MULT_F1_R6(Rmult);
+			set_PLL_R_F1_R5(RpostDivider);
+
+			set_PLL_N_F1_R4(Ninteger);
+			set_PLL_DEN_F1_R1R3(Nden);
+			set_PLL_NUM_F1_R1R2(Nnum);
+
+			set_CHDIV1_F1_R6(chDiv1);
+			set_CHDIV2_F1_R6(chDiv2);
+
+			set_FCAL_EN_R0(1);
+
+			writeRegister(6);
+			writeRegister(5);
+			writeRegister(4);
+			writeRegister(3);
+			writeRegister(2);
+			writeRegister(0);
+		}
+		return result;
 	}
 
-	bool Device::isTxMode () {
+
+	bool Device::setReduceTxFrequencyBy (const uint32_t freqIndex) {
+
+		bool result = true;
+
+		// R-divider
+		uint16_t Rmult; // 0 = Reserved; 1 = Bypass; 2 = 2x ... 13 = 13x; 14-31 = Reserved (must be greater than Pre-divider value)
+		uint8_t RpreDivider; // 0 ... 255
+		uint8_t RpostDivider; // 0 ... 255 ???
+
+		// N-divider
+		uint16_t Ninteger; // 0 ... 1023
+		uint32_t Nden; // 0 ... (2^24)-1
+		uint32_t Nnum; // 0 ... (2^24)-1
+
+		// Out-divider
+		uint8_t chDiv1; // 0 = Divide by 4; 1 = Divide by 5; 2 = Divide by 6; 3 = Divide by 7
+		uint8_t chDiv2; // 0 = Divide by 1; 1 = Divide by 2; 2 = Divide by 4; . 6 = Divide by 64
+
+		if ((LOW_TX_FREQ_INDEX_RANGE1 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE1)) {
+			// R-divider
+//			RpreDivider = 4;
+//			Rmult = 5;
+//			RpostDivider = 5;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE1);
+			Ninteger = 240 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+//			// Out-divider
+//			chDiv1 = 1; // 5
+//			chDiv2 = 5; // 32
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE2 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE2)) {
+			// R-divider
+			RpreDivider = 5;
+			Rmult = 6;
+			RpostDivider = 6;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE2) + 9;
+			Ninteger = 268 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 0; // 4
+			chDiv2 = 5; // 32
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE3 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE3)) {
+			// R-divider
+			RpreDivider = 4;
+			Rmult = 7;
+			RpostDivider = 10;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE3) + 1;
+			Ninteger = 320 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 3; // 7
+			chDiv2 = 4; // 16
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE4 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE4)) {
+			// R-divider
+			RpreDivider = 4;
+			Rmult = 6;
+			RpostDivider = 10;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE4) + 1;
+			Ninteger = 368 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 2; // 6
+			chDiv2 = 4; // 16
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE5 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE5)) {
+			// R-divider
+			RpreDivider = 4;
+			Rmult = 5;
+			RpostDivider = 10;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE5) + 1;
+			Ninteger = 432 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 1; // 5
+			chDiv2 = 4; // 16
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE6 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE6)) {
+			// R-divider
+			RpreDivider = 1;
+			Rmult = 1;
+			RpostDivider = 10;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE6) + 7;
+			Ninteger = 537 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 0; // 4
+			chDiv2 = 4; // 16
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE7 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE7)) {
+			// R-divider
+			RpreDivider = 2;
+			Rmult = 7;
+			RpostDivider = 40;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE7) + 1;
+			Ninteger = 624 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+			chDiv1 = 3; // 7
+			chDiv2 = 3; // 8
+		}
+		else if ((LOW_TX_FREQ_INDEX_RANGE8 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE8)) {
+			// R-divider
+//			RpreDivider = 1;
+//			Rmult = 3;
+//			RpostDivider = 40;
+			// N-divider
+			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE8) + 1;
+			Ninteger = 736 + extDivValue / 10;
+			Nden = 10;
+			Nnum = extDivValue % 10;
+			// Out-divider
+//			chDiv1 = 2; // 6
+//			chDiv2 = 3; // 8
+		}
+		else {
+			result = false;
+		}
+
+		if (result) {
+//			set_PLL_R_PRE_F1_R5(RpreDivider);
+//			set_MULT_F1_R6(Rmult);
+//			set_PLL_R_F1_R5(RpostDivider);
+
+			set_PLL_N_F1_R4(Ninteger);
+//			set_PLL_DEN_F1_R1R3(Nden);
+			set_PLL_NUM_F1_R1R2(Nnum);
+
+//			set_CHDIV1_F1_R6(chDiv1);
+//			set_CHDIV2_F1_R6(chDiv2);
+
+			set_FCAL_EN_R0(1);
+
+//			writeRegister(6);
+//			writeRegister(5);
+			writeRegister(4);
+//			writeRegister(3);
+			writeRegister(2);
+			writeRegister(0);
+		}
+		return result;
 	}
-
-	void Device::isRxMode () {
-	}
-
-	void Device::setTxFrequency (const uint32_t constUnsignedInt) {
-
-		// TX R-divider
-		txRmult = 4;
-		txPostDivider = 1;
-		txPreDivider = 1;
-
-		// TX N-divider
-		txPreScaler = 1; // 0 = Divide by 2; 1 = Divide by 4
-		txNinteger = 15; // 0 ... 1023
-		txNden = 8388608; // 0 ... (2^24)-1
-		txNnum = 0; // 0 ... (2^24)-1
-
-		//
-		txChDiv1 = 0; // 0 = Divide by 4; 1 = Divide by 5; 2 = Divide by 6; 3 = Divide by 7
-		txChDiv2 = 6; // 0 = Divide by 1; 1 = Divide by 2; 2 = Divide by 4; . 6 = Divide by 64
-	}
-
 	Device::Device () {
-
-
-		// GPIO
-
-		/* The Local PSC number for GPIO is 3. GPIO belongs to PSC1 module.*/
-		PSCModuleControl(SOC_PSC_1_REGS, HW_PSC_GPIO, PSC_POWERDOMAIN_ALWAYS_ON,
-		PSC_MDCTL_NEXT_ENABLE);
-
-		/* Pin Multiplexing of pin 4 of GPIO Bank 8.*/
-		GPIOBank8Pin4PinMuxSetup();
-
-		/* Sets the pin 133 (GP8[4]) as output.*/
-		GPIODirModeSet(SOC_GPIO_0_REGS, 133, GPIO_DIR_OUTPUT);
-
 
 		// SPI
 
@@ -317,26 +506,71 @@ namespace lmx2571 {
 		/* Performing the Pin Multiplexing for SPI0. */
 		SPIPinMuxSetup(0);
 
-		/*
-		 ** Using the Chip Select(CS) 4 pin of SPI0 to communicate with the LMX2571.
-		 */
+		/* Using the Chip Select(CS) 4 pin of SPI0 to communicate with the LMX2571. */
 		SPI0CSPinMuxSetup(CS);
 
 		/* Enable use of SPI0 interrupts. */
-		SetUpInt();
+		// Initialize the DSP interrupt controller
+		IntDSPINTCInit();
+
+		// Register the ISR in the vector table
+		IntRegister(C674X_MASK_INT4, SPIIsr);
+
+		// Map system interrupt to the DSP maskable interrupt
+		IntEventMap(C674X_MASK_INT4, SYS_INT_SPI0_INT);
+
+		// Enable the DSP maskable interrupt
+		IntEnable(C674X_MASK_INT4);
+
+		// Enable DSP interrupts globally
+		IntGlobalEnable();
 
 		/* Configuring and enabling the SPI0 instance. */
-		SetUpSPI((1 << CS), 0/*(1 << CS)*/);
+		SPIReset(SOC_SPI_0_REGS);
 
+		SPIOutOfReset(SOC_SPI_0_REGS);
 
-//		// MCBSP
-//
-//		 configureMcbsp();
+		SPIModeConfigure(SOC_SPI_0_REGS, SPI_MASTER_MODE);
 
+		SPIClkConfigure(SOC_SPI_0_REGS, 150000000, 1000000, SPI_DATA_FORMAT0);
 
-		//
-		memcpy(m_registers, DEFV_REGISTER, REGISTER_ARR_SIZE*(sizeof(m_registers[0])));
+		/* value to configure SMIO,SOMI,CLK and CS pin as functional pin */
+		unsigned int controlRegIdx = 0;
+		unsigned int controlReg0 = 0x00000E00;
+		controlReg0 |= (1 << CS);
+		SPIPinControl(SOC_SPI_0_REGS, controlRegIdx, 0, &controlReg0);
 
+		SPIDefaultCSSet(SOC_SPI_0_REGS, (1 << CS));
+
+		/* Configures SPI Data Format Register */
+		/* Configures the polarity and phase of SPI clock */
+		SPIConfigClkFormat(SOC_SPI_0_REGS, (SPI_CLK_POL_HIGH | SPI_CLK_INPHASE), SPI_DATA_FORMAT0);
+
+		/* Configures SPI to transmit MSB bit First during data transfer */
+		SPIShiftMsbFirst(SOC_SPI_0_REGS, SPI_DATA_FORMAT0);
+
+		/* Sets the Charcter length */
+		SPICharLengthSet(SOC_SPI_0_REGS, CHAR_LENGTH, SPI_DATA_FORMAT0);
+
+		/* Selects the SPI Data format register to used and Sets CSHOLD
+		 * to assert CS pin(line)
+		 */
+		SPIDat1Config(SOC_SPI_0_REGS, (SPI_CSHOLD | SPI_DATA_FORMAT0), (1 << CS));
+
+		/* map interrupts to interrupt line INT1 */
+		SPIIntLevelSet(SOC_SPI_0_REGS, SPI_RECV_INTLVL | SPI_TRANSMIT_INTLVL);
+
+		/* Enable SPI communication */
+		SPIEnable(SOC_SPI_0_REGS);
+
+		memcpy(m_registers, DEFV_REGISTER, REGISTER_ARR_SIZE * (sizeof(m_registers[0])));
+	}
+
+	void Device::setBits (uint16_t * reg, uint16_t wstart, uint16_t value, uint16_t rstart, uint16_t num) {
+
+		for (uint16_t i = 0; i < num; ++i) {
+			*reg ^= (-(unsigned long) (value >> (rstart + i) & 1UL) ^ *reg) & (1UL << (wstart + i));
+		}
 	}
 
 	void Device::writeRegister (const uint8_t adrr, const uint16_t data) {
@@ -359,32 +593,5 @@ namespace lmx2571 {
 
 		return m_rxMsg().data.value<uint16_t>();
 	}
-
-
-
-//	/*
-//	 * Mcbsp init function called when creating the driver.
-//	 */
-//	void mcbspUserInit()
-//	{
-//	    Mcbsp_init();
-//
-//	    /* configure the SRG properties                                           */
-//	    /* use Mcbsp intenal clock      */
-//	    mcbspSrgParams.srgInputClkMode = Mcbsp_SrgClk_CLKCPU;
-//	    /* 1 bit width framesync        */
-//	    mcbspSrgParams.srgFrmPulseWidth = 0;
-//	    /* internal clock frequncy      */
-//	    mcbspSrgParams.srgrInputFreq = 150000000;
-//
-//	    mcbspParams 				= Mcbsp_PARAMS;
-//	    mcbspParams.mode 			= Mcbsp_DevMode_McBSP;
-//	    mcbspParams.opMode 			= Mcbsp_OpMode_DMAINTERRUPT;
-//	    mcbspParams.enablecache 	= TRUE;
-//	    mcbspParams.emulationMode 	= Mcbsp_EmuMode_FREE;
-//	    mcbspParams.dlbMode 		= Mcbsp_Loopback_DISABLE;
-//	    mcbspParams.clkStpMode 		= Mcbsp_ClkStpMode_DISABLED;
-//	    mcbspParams.srgSetup 		= &mcbspSrgParams;
-//	}
 
 } /* namespace Lmx2571 */
