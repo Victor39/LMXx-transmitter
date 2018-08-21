@@ -217,6 +217,39 @@ namespace lmx2571 {
 			writeRegister(6, m_registers[6]);
 		}
 
+		// Register 7
+		void set_LF_R4_F1_R7 (const uint8_t value) {
+			setBits(&m_registers[7], 0, value, 0, 3);
+		}
+		void write_LF_R4_F1_R7 (const uint8_t value) {
+			set_LF_R4_F1_R7(value);
+			writeRegister(7, m_registers[7]);
+		}
+
+		void set_OUTBUF_RX_EN_F1_R7 (const uint8_t value) {
+			setBits(&m_registers[7], 6, value, 0, 1);
+		}
+		void write_OUTBUF_RX_EN_F1_R7 (const uint8_t value) {
+			set_OUTBUF_RX_EN_F1_R7(value);
+			writeRegister(7, m_registers[7]);
+		}
+
+		void set_OUTBUF_TX_EN_F1_R7 (const uint8_t value) {
+			setBits(&m_registers[7], 7, value, 0, 1);
+		}
+		void write_OUTBUF_TX_EN_F1_R7 (const uint8_t value) {
+			set_OUTBUF_TX_EN_F1_R7(value);
+			writeRegister(7, m_registers[7]);
+		}
+
+		void set_OUTBUF_RX_PWR_F1_R7 (const uint8_t value) {
+			setBits(&m_registers[7], 8, value, 0, 5);
+		}
+		void write_OUTBUF_RX_PWR_F1_R7 (const uint8_t value) {
+			set_OUTBUF_RX_PWR_F1_R7(value);
+			writeRegister(7, m_registers[7]);
+		}
+
 		// Register 8
 		void set_OUTBUF_TX_PWR_F1_R8 (const uint8_t value) {
 			setBits(&m_registers[8], 0, value, 0, 5);
@@ -353,6 +386,40 @@ namespace lmx2571 {
 			set_LF_R3_F2_R22(value);
 			writeRegister(22, m_registers[22]);
 		}
+
+		// Register 23
+		void set_LF_R4_F2_R23 (const uint8_t value) {
+			setBits(&m_registers[23], 0, value, 0, 3);
+		}
+		void write_LF_R4_F2_R23 (const uint8_t value) {
+			set_LF_R4_F2_R23(value);
+			writeRegister(23, m_registers[23]);
+		}
+
+		void set_OUTBUF_RX_EN_F2_R23 (const uint8_t value) {
+			setBits(&m_registers[23], 6, value, 0, 1);
+		}
+		void write_OUTBUF_RX_EN_F2_R23 (const uint8_t value) {
+			set_OUTBUF_RX_EN_F2_R23(value);
+			writeRegister(23, m_registers[23]);
+		}
+
+		void set_OUTBUF_TX_EN_F2_R23 (const uint8_t value) {
+			setBits(&m_registers[23], 7, value, 0, 1);
+		}
+		void write_OUTBUF_TX_EN_F2_R23 (const uint8_t value) {
+			set_OUTBUF_TX_EN_F2_R23(value);
+			writeRegister(23, m_registers[23]);
+		}
+
+		void set_OUTBUF_RX_PWR_F2_R23 (const uint8_t value) {
+			setBits(&m_registers[23], 8, value, 0, 5);
+		}
+		void write_OUTBUF_RX_PWR_F2_R23 (const uint8_t value) {
+			set_OUTBUF_RX_PWR_F2_R23(value);
+			writeRegister(23, m_registers[23]);
+		}
+
 
 		// Register 24
 		void set_OUTBUF_TX_PWR_F2_R24 (const uint8_t value) {

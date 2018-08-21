@@ -53,16 +53,18 @@ int main (void) {
 	transmitter.write_FCAL_EN_R0(1);
 
 	// Set charge pump
-//	transmitter.write_CP_IUP_R40(1);
-//	transmitter.write_CP_GAIN_R40(0);
-//	transmitter.write_CP_IDN_R41(1);
+//	transmitter.write_CP_IUP_R40(31);
+//	transmitter.write_CP_GAIN_R40(3);
+//	transmitter.write_CP_IDN_R41(31);
+	transmitter.write_CP_IUP_R40(1);
+	transmitter.write_CP_GAIN_R40(0);
+	transmitter.write_CP_IDN_R41(1);
 
-
-	uint16_t registers2[61];
-
-	for (int i = 0; i < 61; ++i) {
-		registers2[i] = transmitter.readRegister(i);
-	}
+	// Set parameters loop filter
+	transmitter.write_LF_R3_F1_R6(7);
+	transmitter.write_LF_R4_F1_R7(7);
+//	transmitter.write_LF_R3_F2_R22(1);
+//	transmitter.write_LF_R4_F2_R23(1);
 
 #define SINE_SIZE (24)
 	float sin_24k_fs_1k_fc[SINE_SIZE] = {0.258819045102521, 0.500000000000000, 0.707106781186548, 0.866025403784439,
@@ -93,11 +95,11 @@ int main (void) {
 
 //		for (int i = 0; i < 6240; ++i) {
 //			transmitter.setTxFrequencyBy(i);
-//			for (int j = 0; j < 50000; ++j) {
+//			for (int j = 0; j < 100000; ++j) {
 //				asm(" nop");
 //			}
 //		}
-//
+
 
 //		uint16_t index = rand()%6240;
 //		transmitter.setTxFrequencyBy(index);
@@ -106,7 +108,7 @@ int main (void) {
 
 		transmitter.setTxFrequencyBy(1282);
 		delayNop(500000);
-		transmitter.setTxFrequencyBy(6000);
+		transmitter.setTxFrequencyBy(1300);
 		delayNop(500000);
 
 	}
