@@ -14,9 +14,13 @@ namespace lmx2571 {
 			return instance;
 		}
 
-		void setTxMode ();
-		bool setTxFrequencyBy (const uint32_t freqIndex);
-		bool setReduceTxFrequencyBy (const uint32_t freqIndex);
+		void startUp();
+		void setTxMode_1 ();
+		bool setTxFrequencyBy_1 (const uint32_t freqIndex);
+
+		void setTxMode_2 ();
+		bool setTxFrequencyBy_2 (const uint32_t freqIndex);
+		bool setTxFrequency_2(const uint32_t freq);
 
 		void writeRegister (const uint8_t adrr, const uint16_t data);
 		void writeRegister (const uint8_t adrr) {
@@ -44,7 +48,7 @@ namespace lmx2571 {
 		}
 		void write_FCAL_EN_R0 (const uint8_t value) {
 			set_FCAL_EN_R0(value);
-			writeRegister(0, m_registers[0]);
+			writeRegister(0);
 		}
 
 		void set_F1F2_SEL_R0 (const uint8_t value) {
@@ -52,7 +56,7 @@ namespace lmx2571 {
 		}
 		void write_F1F2_SEL_R0 (const uint8_t value) {
 			set_F1F2_SEL_R0(value);
-			writeRegister(0, m_registers[0]);
+			writeRegister(0);
 		}
 
 		void set_F1F2_MODE_R0 (const uint8_t value) {
@@ -60,7 +64,7 @@ namespace lmx2571 {
 		}
 		void write_F1F2_MODE_R0 (const uint8_t value) {
 			set_F1F2_MODE_R0(value);
-			writeRegister(0, m_registers[0]);
+			writeRegister(0);
 		}
 
 		void set_F1F2_CTRL_R0 (const uint8_t value) {
@@ -68,7 +72,7 @@ namespace lmx2571 {
 		}
 		void write_F1F2_CTRL_R0 (const uint8_t value) {
 			set_F1F2_CTRL_R0(value);
-			writeRegister(0, m_registers[0]);
+			writeRegister(0);
 		}
 
 		void set_F1F2_INIT_R0 (const uint8_t value) {
@@ -76,7 +80,7 @@ namespace lmx2571 {
 		}
 		void write_F1F2_INIT_R0 (const uint8_t value) {
 			set_F1F2_INIT_R0(value);
-			writeRegister(0, m_registers[0]);
+			writeRegister(0);
 		}
 
 		void set_RXTX_POL_R0 (const uint8_t value) {
@@ -84,7 +88,7 @@ namespace lmx2571 {
 		}
 		void write_RXTX_POL (const uint8_t value) {
 			set_RXTX_POL_R0(value);
-			writeRegister(0, m_registers[0]);
+			writeRegister(0);
 		}
 
 		void set_RXTX_CTRL_R0 (const uint8_t value) {
@@ -92,7 +96,7 @@ namespace lmx2571 {
 		}
 		void write_RXTX_CTRL_R0 (const uint8_t value) {
 			set_RXTX_CTRL_R0(value);
-			writeRegister(0, m_registers[0]);
+			writeRegister(0);
 		}
 
 		void set_POWERDOWN_R0 (const uint8_t value) {
@@ -100,7 +104,7 @@ namespace lmx2571 {
 		}
 		void write_POWERDOWN_R0 (const uint8_t value) {
 			set_POWERDOWN_R0(value);
-			writeRegister(0, m_registers[0]);
+			writeRegister(0);
 		}
 
 		void set_RESET_R0 (const uint8_t value) {
@@ -108,7 +112,7 @@ namespace lmx2571 {
 		}
 		void write_RESET_R0 (const uint8_t value) {
 			set_RESET_R0(value);
-			writeRegister(0, m_registers[0]);
+			writeRegister(0);
 		}
 
 		// Register 1 ... 3
@@ -118,8 +122,8 @@ namespace lmx2571 {
 		}
 		void write_PLL_DEN_F1_R1R3 (const uint32_t value) {
 			set_PLL_DEN_F1_R1R3(value);
-			writeRegister(3, m_registers[3]);
-			writeRegister(1, m_registers[1]);
+			writeRegister(3);
+			writeRegister(1);
 		}
 
 		void set_PLL_NUM_F1_R1R2 (const uint32_t value) {
@@ -128,8 +132,8 @@ namespace lmx2571 {
 		}
 		void write_PLL_NUM_F1_R1R2 (const uint32_t value) {
 			set_PLL_NUM_F1_R1R2(value);
-			writeRegister(2, m_registers[2]);
-			writeRegister(1, m_registers[1]);
+			writeRegister(2);
+			writeRegister(1);
 		}
 
 		// Register 4
@@ -138,7 +142,7 @@ namespace lmx2571 {
 		}
 		void write_PLL_N_F1_R4 (const uint16_t value) {
 			set_PLL_N_F1_R4(value);
-			writeRegister(4, m_registers[4]);
+			writeRegister(4);
 		}
 
 		void set_FRAC_ORDER_F1_R4 (const uint8_t value) {
@@ -146,7 +150,7 @@ namespace lmx2571 {
 		}
 		void write_FRAC_ORDER_F1_R4 (const uint8_t value) {
 			set_FRAC_ORDER_F1_R4(value);
-			writeRegister(4, m_registers[4]);
+			writeRegister(4);
 		}
 
 		void set_PLL_N_PRE_F1_R4 (const uint8_t value) {
@@ -156,7 +160,7 @@ namespace lmx2571 {
 		void write_PLL_N_PRE_F1_R4 (const uint8_t value) {
 			// 0 = Divide by 2; 1 = Divide by 4
 			set_PLL_N_PRE_F1_R4(value);
-			writeRegister(4, m_registers[4]);
+			writeRegister(4);
 		}
 
 		// Register 5
@@ -165,7 +169,7 @@ namespace lmx2571 {
 		}
 		void write_PLL_R_PRE_F1_R5 (const uint8_t value) {
 			set_PLL_R_PRE_F1_R5(value);
-			writeRegister(5, m_registers[5]);
+			writeRegister(5);
 		}
 
 		void set_PLL_R_F1_R5 (const uint8_t value) {
@@ -173,7 +177,7 @@ namespace lmx2571 {
 		}
 		void write_PLL_R_F1_R5 (const uint8_t value) {
 			set_PLL_R_F1_R5(value);
-			writeRegister(5, m_registers[5]);
+			writeRegister(5);
 		}
 
 		// Register 6
@@ -182,7 +186,7 @@ namespace lmx2571 {
 		}
 		void write_MULT_F1_R6 (const uint8_t value) {
 			set_MULT_F1_R6(value);
-			writeRegister(6, m_registers[6]);
+			writeRegister(6);
 		}
 
 		void set_PFD_DELAY_F1_R6 (const uint8_t value) {
@@ -190,7 +194,7 @@ namespace lmx2571 {
 		}
 		void write_PFD_DELAY_F1_R6 (const uint8_t value) {
 			set_PFD_DELAY_F1_R6(value);
-			writeRegister(6, m_registers[6]);
+			writeRegister(6);
 		}
 
 		void set_CHDIV1_F1_R6 (const uint8_t value) {
@@ -198,7 +202,7 @@ namespace lmx2571 {
 		}
 		void write_CHDIV1_F1_R6 (const uint8_t value) {
 			set_CHDIV1_F1_R6(value);
-			writeRegister(6, m_registers[6]);
+			writeRegister(6);
 		}
 
 		void set_CHDIV2_F1_R6 (const uint8_t value) {
@@ -206,7 +210,7 @@ namespace lmx2571 {
 		}
 		void write_CHDIV2_F1_R6 (const uint8_t value) {
 			set_CHDIV2_F1_R6(value);
-			writeRegister(6, m_registers[6]);
+			writeRegister(6);
 		}
 
 		void set_LF_R3_F1_R6 (const uint8_t value) {
@@ -214,7 +218,7 @@ namespace lmx2571 {
 		}
 		void write_LF_R3_F1_R6 (const uint8_t value) {
 			set_LF_R3_F1_R6(value);
-			writeRegister(6, m_registers[6]);
+			writeRegister(6);
 		}
 
 		// Register 7
@@ -223,7 +227,7 @@ namespace lmx2571 {
 		}
 		void write_LF_R4_F1_R7 (const uint8_t value) {
 			set_LF_R4_F1_R7(value);
-			writeRegister(7, m_registers[7]);
+			writeRegister(7);
 		}
 
 		void set_OUTBUF_RX_EN_F1_R7 (const uint8_t value) {
@@ -231,7 +235,7 @@ namespace lmx2571 {
 		}
 		void write_OUTBUF_RX_EN_F1_R7 (const uint8_t value) {
 			set_OUTBUF_RX_EN_F1_R7(value);
-			writeRegister(7, m_registers[7]);
+			writeRegister(7);
 		}
 
 		void set_OUTBUF_TX_EN_F1_R7 (const uint8_t value) {
@@ -239,7 +243,7 @@ namespace lmx2571 {
 		}
 		void write_OUTBUF_TX_EN_F1_R7 (const uint8_t value) {
 			set_OUTBUF_TX_EN_F1_R7(value);
-			writeRegister(7, m_registers[7]);
+			writeRegister(7);
 		}
 
 		void set_OUTBUF_RX_PWR_F1_R7 (const uint8_t value) {
@@ -247,7 +251,7 @@ namespace lmx2571 {
 		}
 		void write_OUTBUF_RX_PWR_F1_R7 (const uint8_t value) {
 			set_OUTBUF_RX_PWR_F1_R7(value);
-			writeRegister(7, m_registers[7]);
+			writeRegister(7);
 		}
 
 		// Register 8
@@ -256,7 +260,7 @@ namespace lmx2571 {
 		}
 		void write_OUTBUF_TX_PWR_F1_R8 (const uint8_t value) {
 			set_OUTBUF_TX_PWR_F1_R8(value);
-			writeRegister(8, m_registers[8]);
+			writeRegister(8);
 		}
 
 		void set_EXTVCO_SEL_F1_R8 (const uint8_t value) {
@@ -264,7 +268,7 @@ namespace lmx2571 {
 		}
 		void write_EXTVCO_SEL_F1_R8 (const uint8_t value) {
 			set_EXTVCO_SEL_F1_R8(value);
-			writeRegister(8, m_registers[8]);
+			writeRegister(8);
 		}
 
 		void set_EXTVCO_CHDIV_F1_R8 (const uint8_t value) {
@@ -272,7 +276,7 @@ namespace lmx2571 {
 		}
 		void write_EXTVCO_CHDIV_F1_R8 (const uint8_t value) {
 			set_EXTVCO_CHDIV_F1_R8(value);
-			writeRegister(8, m_registers[8]);
+			writeRegister(8);
 		}
 
 		void set_FSK_EN_F1_R8 (const uint8_t value) {
@@ -280,7 +284,7 @@ namespace lmx2571 {
 		}
 		void write_FSK_EN_F1_R8 (const uint8_t value) {
 			set_FSK_EN_F1_R8(value);
-			writeRegister(8, m_registers[8]);
+			writeRegister(8);
 		}
 
 		// Register 17 ... 19
@@ -290,8 +294,8 @@ namespace lmx2571 {
 		}
 		void write_PLL_DEN_F2_R17R19 (const uint32_t value) {
 			set_PLL_DEN_F2_R17R19(value);
-			writeRegister(19, m_registers[19]);
-			writeRegister(17, m_registers[17]);
+			writeRegister(19);
+			writeRegister(17);
 		}
 
 		void set_PLL_NUM_F2_R17R18 (const uint32_t value) {
@@ -301,8 +305,8 @@ namespace lmx2571 {
 		}
 		void write_PLL_NUM_F2_R17R18 (const uint32_t value) {
 			set_PLL_NUM_F2_R17R18(value);
-			writeRegister(18, m_registers[18]);
-			writeRegister(17, m_registers[17]);
+			writeRegister(18);
+			writeRegister(17);
 		}
 
 		// Register 20
@@ -311,7 +315,7 @@ namespace lmx2571 {
 		}
 		void write_PLL_N_F2_R20 (const uint16_t value) {
 			set_PLL_N_F2_R20(value);
-			writeRegister(20, m_registers[20]);
+			writeRegister(20);
 		}
 
 		void set_FRAC_ORDER_F2_R20 (const uint8_t value) {
@@ -319,7 +323,7 @@ namespace lmx2571 {
 		}
 		void write_FRAC_ORDER_F2_R20 (const uint8_t value) {
 			set_FRAC_ORDER_F2_R20(value);
-			writeRegister(20, m_registers[20]);
+			writeRegister(20);
 		}
 
 		void set_PLL_N_PRE_F2_R20 (const uint8_t value) {
@@ -327,7 +331,7 @@ namespace lmx2571 {
 		}
 		void write_PLL_N_PRE_F2_R20 (const uint8_t value) {
 			set_PLL_N_PRE_F2_R20(value);
-			writeRegister(20, m_registers[20]);
+			writeRegister(20);
 		}
 
 		// Register 21
@@ -336,14 +340,14 @@ namespace lmx2571 {
 		}
 		void write_PLL_R_PRE_F2_R21 (const uint8_t value) {
 			set_PLL_R_PRE_F2_R21(value);
-			writeRegister(21, m_registers[21]);
+			writeRegister(21);
 		}
 		void set_PLL_R_F2_R21 (const uint8_t value) {
 			setBits(&m_registers[21], 8, value, 0, 8);
 		}
 		void write_PLL_R_F2_R21 (const uint8_t value) {
 			set_PLL_R_F2_R21(value);
-			writeRegister(21, m_registers[21]);
+			writeRegister(21);
 		}
 
 		// Register 22
@@ -352,7 +356,7 @@ namespace lmx2571 {
 		}
 		void write_MULT_F2_R22 (const uint8_t value) {
 			set_MULT_F2_R22(value);
-			writeRegister(22, m_registers[22]);
+			writeRegister(22);
 		}
 
 		void set_PFD_DELAY_F2_R22 (const uint8_t value) {
@@ -360,7 +364,7 @@ namespace lmx2571 {
 		}
 		void write_PFD_DELAY_F2_R22 (const uint8_t value) {
 			set_PFD_DELAY_F2_R22(value);
-			writeRegister(22, m_registers[22]);
+			writeRegister(22);
 		}
 
 		void set_CHDIV1_F2_R22 (const uint8_t value) {
@@ -368,7 +372,7 @@ namespace lmx2571 {
 		}
 		void write_CHDIV1_F2_R22 (const uint8_t value) {
 			set_CHDIV1_F2_R22(value);
-			writeRegister(22, m_registers[22]);
+			writeRegister(22);
 		}
 
 		void set_CHDIV2_F2_R22 (const uint8_t value) {
@@ -376,7 +380,7 @@ namespace lmx2571 {
 		}
 		void write_CHDIV2_F2_R22 (const uint8_t value) {
 			set_CHDIV2_F2_R22(value);
-			writeRegister(22, m_registers[22]);
+			writeRegister(22);
 		}
 
 		void set_LF_R3_F2_R22 (const uint8_t value) {
@@ -384,7 +388,7 @@ namespace lmx2571 {
 		}
 		void write_LF_R3_F2_R22 (const uint8_t value) {
 			set_LF_R3_F2_R22(value);
-			writeRegister(22, m_registers[22]);
+			writeRegister(22);
 		}
 
 		// Register 23
@@ -393,7 +397,7 @@ namespace lmx2571 {
 		}
 		void write_LF_R4_F2_R23 (const uint8_t value) {
 			set_LF_R4_F2_R23(value);
-			writeRegister(23, m_registers[23]);
+			writeRegister(23);
 		}
 
 		void set_OUTBUF_RX_EN_F2_R23 (const uint8_t value) {
@@ -401,7 +405,7 @@ namespace lmx2571 {
 		}
 		void write_OUTBUF_RX_EN_F2_R23 (const uint8_t value) {
 			set_OUTBUF_RX_EN_F2_R23(value);
-			writeRegister(23, m_registers[23]);
+			writeRegister(23);
 		}
 
 		void set_OUTBUF_TX_EN_F2_R23 (const uint8_t value) {
@@ -409,7 +413,7 @@ namespace lmx2571 {
 		}
 		void write_OUTBUF_TX_EN_F2_R23 (const uint8_t value) {
 			set_OUTBUF_TX_EN_F2_R23(value);
-			writeRegister(23, m_registers[23]);
+			writeRegister(23);
 		}
 
 		void set_OUTBUF_RX_PWR_F2_R23 (const uint8_t value) {
@@ -417,7 +421,7 @@ namespace lmx2571 {
 		}
 		void write_OUTBUF_RX_PWR_F2_R23 (const uint8_t value) {
 			set_OUTBUF_RX_PWR_F2_R23(value);
-			writeRegister(23, m_registers[23]);
+			writeRegister(23);
 		}
 
 
@@ -427,7 +431,7 @@ namespace lmx2571 {
 		}
 		void write_OUTBUF_TX_PWR_F2_R24 (const uint8_t value) {
 			set_OUTBUF_TX_PWR_F2_R24(value);
-			writeRegister(24, m_registers[24]);
+			writeRegister(24);
 		}
 
 		void set_EXTVCO_SEL_F2_R24 (const uint8_t value) {
@@ -435,7 +439,7 @@ namespace lmx2571 {
 		}
 		void write_EXTVCO_SEL_F2_R24 (const uint8_t value) {
 			set_EXTVCO_SEL_F2_R24(value);
-			writeRegister(24, m_registers[24]);
+			writeRegister(24);
 		}
 
 		void set_EXTVCO_CHDIV_F2_R24 (const uint8_t value) {
@@ -443,7 +447,7 @@ namespace lmx2571 {
 		}
 		void write_EXTVCO_CHDIV_F2_R24 (const uint8_t value) {
 			set_EXTVCO_CHDIV_F2_R24(value);
-			writeRegister(24, m_registers[24]);
+			writeRegister(24);
 		}
 
 		void set_FSK_EN_F2_R24 (const uint8_t value) {
@@ -451,7 +455,7 @@ namespace lmx2571 {
 		}
 		void write_FSK_EN_F2 (const uint8_t value) {
 			set_FSK_EN_F2_R24(value);
-			writeRegister(24, m_registers[24]);
+			writeRegister(24);
 		}
 
 		// Register 33
@@ -460,7 +464,7 @@ namespace lmx2571 {
 		}
 		void write_FSK_DEV_SPI_FAST_R33 (const uint16_t value) {
 			set_FSK_DEV_SPI_FAST_R33(value);
-			writeRegister(33, m_registers[33]);
+			writeRegister(33);
 		}
 
 		// Register 34
@@ -469,7 +473,7 @@ namespace lmx2571 {
 		}
 		void write_FSK_MODE_SEL1_R34 (const uint8_t value) {
 			set_FSK_MODE_SEL1_R34(value);
-			writeRegister(34, m_registers[34]);
+			writeRegister(34);
 		}
 
 		void set_FSK_MODE_SEL0_R34 (const uint8_t value) {
@@ -477,7 +481,7 @@ namespace lmx2571 {
 		}
 		void write_FSK_MODE_SEL0_R34 (const uint8_t value) {
 			set_FSK_MODE_SEL0_R34(value);
-			writeRegister(34, m_registers[34]);
+			writeRegister(34);
 		}
 
 		void set_FSK_DEV_SEL_R34 (const uint8_t value) {
@@ -485,7 +489,7 @@ namespace lmx2571 {
 		}
 		void write_FSK_DEV_SEL_R34 (const uint8_t value) {
 			set_FSK_DEV_SEL_R34(value);
-			writeRegister(34, m_registers[34]);
+			writeRegister(34);
 		}
 
 		void set_FSK_LEVEL_R34 (const uint8_t value) {
@@ -493,7 +497,7 @@ namespace lmx2571 {
 		}
 		void write_FSK_LEVEL_R34 (const uint8_t value) {
 			set_FSK_LEVEL_R34(value);
-			writeRegister(34, m_registers[34]);
+			writeRegister(34);
 		}
 
 		void set_FSK_I2S_CLK_POL_R34 (const uint8_t value) {
@@ -501,7 +505,7 @@ namespace lmx2571 {
 		}
 		void write_FSK_I2S_CLK_POL_R34 (const uint8_t value) {
 			set_FSK_I2S_CLK_POL_R34(value);
-			writeRegister(34, m_registers[34]);
+			writeRegister(34);
 		}
 
 		void set_FSK_I2S_FS_POL_R34 (const uint8_t value) {
@@ -509,7 +513,7 @@ namespace lmx2571 {
 		}
 		void write_FSK_I2S_FS_POL_R34 (const uint8_t value) {
 			set_FSK_I2S_FS_POL_R34(value);
-			writeRegister(34, m_registers[34]);
+			writeRegister(34);
 		}
 
 		void set_XTAL_EN_R34 (const uint8_t value) {
@@ -517,7 +521,7 @@ namespace lmx2571 {
 		}
 		void write_XTAL_EN_R34 (const uint8_t value) {
 			set_XTAL_EN_R34(value);
-			writeRegister(34, m_registers[34]);
+			writeRegister(34);
 		}
 
 		void set_XTAL_PWRCTRL_R34 (const uint8_t value) {
@@ -525,7 +529,7 @@ namespace lmx2571 {
 		}
 		void write_XTAL_PWRCTRL_R34 (const uint8_t value) {
 			set_XTAL_PWRCTRL_R34(value);
-			writeRegister(34, m_registers[34]);
+			writeRegister(34);
 		}
 
 		void set_IPBUF_SE_DIFF_SEL_R34 (const uint8_t value) {
@@ -533,7 +537,7 @@ namespace lmx2571 {
 		}
 		void write_IPBUF_SE_DIFF_SEL (const uint8_t value) {
 			set_IPBUF_SE_DIFF_SEL_R34(value);
-			writeRegister(34, m_registers[34]);
+			writeRegister(34);
 		}
 
 		void set_IPBUFDIFF_TERM_R34 (const uint8_t value) {
@@ -541,7 +545,40 @@ namespace lmx2571 {
 		}
 		void write_IPBUFDIFF_TERM_R34 (const uint8_t value) {
 			set_IPBUFDIFF_TERM_R34(value);
-			writeRegister(34, m_registers[34]);
+			writeRegister(34);
+		}
+
+		// Register 35
+		void set_OUTBUF_RX_TYPE_R35 (const uint8_t value) {
+			setBits(&m_registers[35], 0, value, 0, 1);
+		}
+		void write_OUTBUF_RX_TYPE_R35 (const uint8_t value) {
+			set_OUTBUF_RX_TYPE_R35(value);
+			writeRegister(35);
+		}
+
+		void set_OUTBUF_TX_TYPE_R35 (const uint8_t value) {
+			setBits(&m_registers[35], 1, value, 0, 1);
+		}
+		void write_OUTBUF_TX_TYPE_R35 (const uint8_t value) {
+			set_OUTBUF_TX_TYPE_R35(value);
+			writeRegister(35);
+		}
+
+		void set_OUTBUF_AUTOMUTE_R35 (const uint8_t value) {
+			setBits(&m_registers[35], 2, value, 0, 1);
+		}
+		void write_OUTBUF_AUTOMUTE_R35 (const uint8_t value) {
+			set_OUTBUF_AUTOMUTE_R35(value);
+			writeRegister(35);
+		}
+
+		void set_MULT_WAIT_R35 (const uint16_t value) {
+			setBits(&m_registers[35], 3, value, 0, 11);
+		}
+		void write_MULT_WAIT_R35 (const uint16_t value) {
+			set_MULT_WAIT_R35(value);
+			writeRegister(35);
 		}
 
 		// Register 39
@@ -550,7 +587,7 @@ namespace lmx2571 {
 		}
 		void write_LD_EN (const uint8_t value) {
 			set_LD_EN_R39(value);
-			writeRegister(39, m_registers[39]);
+			writeRegister(39);
 		}
 
 		void set_SDO_LD_SEL_R39 (const uint8_t value) {
@@ -558,7 +595,7 @@ namespace lmx2571 {
 		}
 		void write_SDO_LD_SEL_R39 (const uint8_t value) {
 			set_SDO_LD_SEL_R39(value);
-			writeRegister(39, m_registers[39]);
+			writeRegister(39);
 		}
 
 		// Register 40
@@ -567,7 +604,7 @@ namespace lmx2571 {
 		}
 		void write_CP_GAIN_R40 (const uint8_t value) {
 			set_CP_GAIN_R40(value);
-			writeRegister(40, m_registers[40]);
+			writeRegister(40);
 		}
 
 		void set_CP_IUP_R40 (const uint8_t value) {
@@ -575,7 +612,7 @@ namespace lmx2571 {
 		}
 		void write_CP_IUP_R40 (const uint8_t value) {
 			set_CP_IUP_R40(value);
-			writeRegister(40, m_registers[40]);
+			writeRegister(40);
 		}
 
 		// Register 41
@@ -584,7 +621,7 @@ namespace lmx2571 {
 		}
 		void write_CP_IDN_R41 (const uint8_t value) {
 			set_CP_IDN_R41(value);
-			writeRegister(41, m_registers[41]);
+			writeRegister(41);
 		}
 
 		void set_EXTVCO_CP_GAIN_R41 (const uint8_t value) {
@@ -592,7 +629,7 @@ namespace lmx2571 {
 		}
 		void write_EXTVCO_CP_GAIN_R41 (const uint8_t value) {
 			set_EXTVCO_CP_GAIN_R41(value);
-			writeRegister(41, m_registers[41]);
+			writeRegister(41);
 		}
 	};
 

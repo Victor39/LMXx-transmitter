@@ -174,13 +174,67 @@ namespace lmx2571 {
 		SpiTransfer(0);
 	}
 
-	void Device::setTxMode () {
-		write_PLL_N_PRE_F1_R4(1); // 0 = Divide by 2; 1 = Divide by 4
-		set_PLL_DEN_F1_R1R3(10  );
-		setTxFrequencyBy(0);
+	void Device::startUp () {
+		// Περες
+		write_RESET_R0(1);
+		uint16_t registr0 = readRegister(0);
+
+		// Enable FSK SPI FAST mode
+		write_FSK_MODE_SEL0_R34(1);
+		write_FSK_MODE_SEL1_R34(1);
+		uint16_t registr34 = readRegister(34);
+
+		write_FSK_EN_F1_R8(1);
+		uint16_t registr8 = readRegister(8);
+
+//		// Out frequency
+//		write_CHDIV1_F1_R6(0);
+//		write_CHDIV2_F1_R6(6);
+//		uint16_t registr6 = readRegister(6);
+//
+//		write_PLL_N_PRE_F1_R4(1);
+//		write_PLL_NUM_F1_R1R2(5);
+//		write_PLL_DEN_F1_R1R3(10);
+//		write_FRAC_ORDER_F1_R4(1);
+//		write_PLL_N_F1_R4(11);
+//
+//		write_PLL_R_PRE_F1_R5(1);
+//		write_MULT_F1_R6(5);
+//		write_PLL_R_F1_R5(1);
+
+// Set MUXout as lock detect
+		write_SDO_LD_SEL_R39(1);
+		write_LD_EN(1);
+
+		// Set charge pump
+		write_CP_IUP_R40(8); // 1250 uA
+		write_CP_GAIN_R40(3); // 2.5x
+		write_CP_IDN_R41(8); // 1250 uA
+
+		// Set parameters loop filter
+		write_LF_R3_F1_R6(6); // 533 Ohm
+		write_LF_R4_F1_R7(7); // 457 Ohm
+
+		// Set ...
+		write_PFD_DELAY_F1_R6(4);
+		write_MULT_WAIT_R35(400);
+		write_FRAC_ORDER_F1_R4(3);
+
+		// Enable
+		write_RESET_R0(0);
+		write_F1F2_MODE_R0(1);
+		write_F1F2_SEL_R0(0);
+		write_FCAL_EN_R0(1);
+
 	}
 
-	bool Device::setTxFrequencyBy (const uint32_t freqIndex) {
+	void Device::setTxMode_1 () {
+		write_PLL_N_PRE_F1_R4(1); // 0 = Divide by 2; 1 = Divide by 4
+		set_PLL_DEN_F1_R1R3(10);
+		setTxFrequencyBy_1(0);
+	}
+
+	bool Device::setTxFrequencyBy_1 (const uint32_t freqIndex) {
 
 		bool result = true;
 
@@ -336,6 +390,90 @@ namespace lmx2571 {
 			writeRegister(0);
 		}
 		return result;
+	}
+
+	void Device::setTxMode_2 () {
+		write_MULT_F1_R6(5);
+		write_PLL_R_PRE_F1_R5(1);
+		write_PLL_R_F1_R5(2);
+		setTxFrequencyBy_2(0);
+	}
+
+	bool Device::setTxFrequencyBy_2 (const uint32_t freqIndex) {
+
+		const uint32_t startFreq = 30000000;
+		const uint32_t freqStep = 12500;
+
+		return setTxFrequency_2(startFreq + freqIndex * freqStep);
+	}
+
+	bool Device::setTxFrequency_2 (const uint32_t freq) {
+
+		// todo
+		const uint64_t pddFreq = 50000000;
+
+		const uint64_t minVcoFreq = 4300000000;
+		const uint64_t maxVcoFreq = 5376000000;
+
+		const uint16_t minChdiv = floorf((minVcoFreq * 1.0f) / freq);
+		const uint16_t maxChdiv = ceilf((maxVcoFreq * 1.0f) / freq);
+
+		const uint16_t numberOfChdiv1Values = 4;
+		const uint16_t possibleChdiv1Values[numberOfChdiv1Values] = {4, 5, 6, 7};
+		const uint16_t numberOfChdiv2Values = 7;
+		const uint16_t possibleChdiv2Values[numberOfChdiv2Values] = {1, 2, 4, 8, 16, 32, 64};
+
+		uint16_t chDiv1 = 0;
+		uint16_t chDiv2 = 0;
+		uint16_t chdiv = 0;
+		for (uint16_t currChdiv = maxChdiv; currChdiv >= minChdiv; --currChdiv) {
+			for (uint16_t chdiv1Index = 0; chdiv1Index < numberOfChdiv1Values; ++chdiv1Index) {
+				for (uint16_t chdiv2Index = 0; chdiv2Index < numberOfChdiv2Values; ++chdiv2Index) {
+					if (currChdiv == (possibleChdiv1Values[chdiv1Index] * possibleChdiv2Values[chdiv2Index])) {
+						chDiv1 = possibleChdiv1Values[chdiv1Index];
+						chDiv2 = possibleChdiv2Values[chdiv2Index];
+						chdiv = chDiv1 * chDiv2;
+						break;
+					}
+				}
+				if (chdiv != 0)
+					break;
+			}
+			if (chdiv != 0)
+				break;
+		}
+
+		if (chdiv == 0)
+			return false;
+
+		const uint64_t vcoFreq = freq * (uint64_t) chdiv;
+
+		uint16_t preNDivider = 2;
+		float NFactor = vcoFreq * 1.0f / (preNDivider * pddFreq);
+		if (NFactor > 16) {
+			preNDivider = 4;
+			NFactor = vcoFreq * 1.0f / (preNDivider * pddFreq);
+		}
+
+		const uint32_t pllN = floorf(NFactor);
+		const uint32_t pllNDen = 10000000;
+		const uint32_t pllNNum = (NFactor - pllN) * pllNDen;
+
+		// Write registers
+		write_PLL_N_PRE_F1_R4((preNDivider == 2) ? 0 : 1); // 0 = Divide by 2; 1 = Divide by 4
+		write_PLL_N_F1_R4(pllN);
+		write_PLL_DEN_F1_R1R3(pllNDen);
+		write_PLL_NUM_F1_R1R2(pllNNum);
+
+		uint16_t chDiv1Value = (chDiv1 == 4) ? 0 : (chDiv1 == 5) ? 1 : (chDiv1 == 6) ? 2 : 3;
+		write_CHDIV1_F1_R6(chDiv1Value);
+		uint16_t chDiv2Value = (chDiv2 == 1) ? 0 : (chDiv2 == 2) ? 1 : (chDiv2 == 4) ? 2 : (chDiv2 == 8) ? 3 : (chDiv2 == 16) ? 4 : (chDiv2 == 32) ? 5 : 6;
+		write_CHDIV2_F1_R6(chDiv2Value);
+
+		write_FCAL_EN_R0(1);
+
+		return true;
+
 	}
 
 	Device::Device () {
