@@ -11,61 +11,32 @@
 
 namespace lmx2571 {
 
-#define MIN_TX_FREQ	(30000000UL)
-#define MAX_TX_FREQ	(108000000UL)
+// TX parameters
+#define TX_MIN_FREQ	(30000000UL)
+#define TX_MAX_FREQ	(108000000UL)
 #define TX_FREQ_SPACING	(12500UL)
 
-#define MIN_TX_FREQ_INDEX (0)
-#define MAX_TX_FREQ_INDEX ((MAX_TX_FREQ - MIN_TX_FREQ) / TX_FREQ_SPACING)
+#define TX_MIN_FREQ_INDEX (0)
+#define TX_MAX_FREQ_INDEX ((TX_MAX_FREQ - TX_MIN_FREQ) / TX_FREQ_SPACING)
 
-// Range 30,0 - 33,6 MHz
-#define LOW_TX_FREQ_RANGE1 (30000000UL)
-#define HIGH_TX_FREQ_RANGE1 (33600000UL)
-#define LOW_TX_FREQ_INDEX_RANGE1 ((LOW_TX_FREQ_RANGE1 - MIN_TX_FREQ) / TX_FREQ_SPACING)
-#define HIGH_TX_FREQ_INDEX_RANGE1 ((HIGH_TX_FREQ_RANGE1 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+#define TX_PDD_FREQ	(50000000)
 
-// Range 33,6125 - 40 MHz
-#define LOW_TX_FREQ_RANGE2 (33612500UL)
-#define HIGH_TX_FREQ_RANGE2 (40000000UL)
-#define LOW_TX_FREQ_INDEX_RANGE2 ((LOW_TX_FREQ_RANGE2 - MIN_TX_FREQ) / TX_FREQ_SPACING)
-#define HIGH_TX_FREQ_INDEX_RANGE2 ((HIGH_TX_FREQ_RANGE2 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+// RX parameters
+#define RX_MIN_FREQ	(285000000UL)
+#define RX_MAX_FREQ	(363000000UL)
+#define RX_FREQ_SPACING	(12500UL)
 
-// Range  40,0125…46 MHz
-#define LOW_TX_FREQ_RANGE3 (40012500UL)
-#define HIGH_TX_FREQ_RANGE3 (46000000UL)
-#define LOW_TX_FREQ_INDEX_RANGE3 ((LOW_TX_FREQ_RANGE3 - MIN_TX_FREQ) / TX_FREQ_SPACING)
-#define HIGH_TX_FREQ_INDEX_RANGE3 ((HIGH_TX_FREQ_RANGE3 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+#define RX_MIN_FREQ_INDEX (0)
+#define RX_MAX_FREQ_INDEX ((RX_MAX_FREQ - RX_MIN_FREQ) / RX_FREQ_SPACING)
 
-// Range 46,0125…54 MHz
-#define LOW_TX_FREQ_RANGE4 (46012500UL)
-#define HIGH_TX_FREQ_RANGE4 (54000000UL)
-#define LOW_TX_FREQ_INDEX_RANGE4 ((LOW_TX_FREQ_RANGE4 - MIN_TX_FREQ) / TX_FREQ_SPACING)
-#define HIGH_TX_FREQ_INDEX_RANGE4 ((HIGH_TX_FREQ_RANGE4 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+#define RX_PDD_FREQ	(80000000)
 
-// Range 54,0125…67,2 MHz
-#define LOW_TX_FREQ_RANGE5 (54012500UL)
-#define HIGH_TX_FREQ_RANGE5 (67200000UL)
-#define LOW_TX_FREQ_INDEX_RANGE5 ((LOW_TX_FREQ_RANGE5 - MIN_TX_FREQ) / TX_FREQ_SPACING)
-#define HIGH_TX_FREQ_INDEX_RANGE5 ((HIGH_TX_FREQ_RANGE5 - MIN_TX_FREQ) / TX_FREQ_SPACING)
+//
+#define MIN_VCO_FREQ	(4300000000)
+#define MAX_VCO_FREQ	(5376000000)
+#define PLL_DEN	(10000000)
 
-// Range 62,2125…78,0 MHz
-#define LOW_TX_FREQ_RANGE6 (67212500UL)
-#define HIGH_TX_FREQ_RANGE6 (78000000UL)
-#define LOW_TX_FREQ_INDEX_RANGE6 ((LOW_TX_FREQ_RANGE6 - MIN_TX_FREQ) / TX_FREQ_SPACING)
-#define HIGH_TX_FREQ_INDEX_RANGE6 ((HIGH_TX_FREQ_RANGE6 - MIN_TX_FREQ) / TX_FREQ_SPACING)
-
-// Range 78,0125…92 MHz
-#define LOW_TX_FREQ_RANGE7 (78012500UL)
-#define HIGH_TX_FREQ_RANGE7 (92000000UL)
-#define LOW_TX_FREQ_INDEX_RANGE7 ((LOW_TX_FREQ_RANGE7 - MIN_TX_FREQ) / TX_FREQ_SPACING)
-#define HIGH_TX_FREQ_INDEX_RANGE7 ((HIGH_TX_FREQ_RANGE7 - MIN_TX_FREQ) / TX_FREQ_SPACING)
-
-// Range 92,0125…108 MHz
-#define LOW_TX_FREQ_RANGE8 (92012500UL)
-#define HIGH_TX_FREQ_RANGE8 (108000000UL)
-#define LOW_TX_FREQ_INDEX_RANGE8 ((LOW_TX_FREQ_RANGE8 - MIN_TX_FREQ) / TX_FREQ_SPACING)
-#define HIGH_TX_FREQ_INDEX_RANGE8 ((HIGH_TX_FREQ_RANGE8 - MIN_TX_FREQ) / TX_FREQ_SPACING)
-
+//
 	const uint16_t DEFV_REGISTER[REGISTER_ARR_SIZE] = {
 	// 0 ... 9
 			0x0003, 0x0000, 0x0000, 0x0000, 0x0028, 0x0101, 0x8584, 0x10A4, 0x0010, 0x0000,
@@ -175,246 +146,98 @@ namespace lmx2571 {
 	}
 
 	void Device::startUp () {
-		// Περες
+
+		/// Reset
 		write_RESET_R0(1);
 		uint16_t registr0 = readRegister(0);
 
-		// Enable FSK SPI FAST mode
+		/// Enable FSK SPI FAST mode
 		write_FSK_MODE_SEL0_R34(1);
 		write_FSK_MODE_SEL1_R34(1);
-		uint16_t registr34 = readRegister(34);
-
 		write_FSK_EN_F1_R8(1);
-		uint16_t registr8 = readRegister(8);
 
-//		// Out frequency
-//		write_CHDIV1_F1_R6(0);
-//		write_CHDIV2_F1_R6(6);
-//		uint16_t registr6 = readRegister(6);
-//
-//		write_PLL_N_PRE_F1_R4(1);
-//		write_PLL_NUM_F1_R1R2(5);
-//		write_PLL_DEN_F1_R1R3(10);
-//		write_FRAC_ORDER_F1_R4(1);
-//		write_PLL_N_F1_R4(11);
-//
-//		write_PLL_R_PRE_F1_R5(1);
-//		write_MULT_F1_R6(5);
-//		write_PLL_R_F1_R5(1);
-
-// Set MUXout as lock detect
+		/// Set MUXout as lock detect
 		write_SDO_LD_SEL_R39(1);
 		write_LD_EN(1);
 
-		// Set charge pump
+		/// Set charge pump
 		write_CP_IUP_R40(8); // 1250 uA
 		write_CP_GAIN_R40(3); // 2.5x
 		write_CP_IDN_R41(8); // 1250 uA
 
-		// Set parameters loop filter
+		/// Set parameters loop filter
 		write_LF_R3_F1_R6(6); // 533 Ohm
 		write_LF_R4_F1_R7(7); // 457 Ohm
+		write_LF_R3_F2_R22(6); // 533 Ohm
+		write_LF_R4_F2_R23(7); // 457 Ohm
 
-		// Set ...
-		write_PFD_DELAY_F1_R6(4);
+		/// Set ...
 		write_MULT_WAIT_R35(400);
+		write_PFD_DELAY_F1_R6(4);
 		write_FRAC_ORDER_F1_R4(3);
+		write_PFD_DELAY_F2_R22(4);
+		write_FRAC_ORDER_F2_R20(3);
+
+		// Set tx/rx fractional denominator of the N-divider
+		write_PLL_DEN_F1_R1R3(PLL_DEN);
+		write_PLL_DEN_F2_R17R19(PLL_DEN);
+
+		// Set tx/rx R-divider
+		write_MULT_F1_R6(5);
+		write_PLL_R_PRE_F1_R5(1);
+		write_PLL_R_F1_R5(2);
+		write_MULT_F2_R22(4);
+		write_PLL_R_PRE_F2_R21(1);
+		write_PLL_R_F2_R21(1);
+
+		//
+		write_OUTBUF_TX_EN_F1_R7(1);
+		write_OUTBUF_RX_EN_F1_R7(0);
+		write_OUTBUF_TX_EN_F2_R23(0);
+		write_OUTBUF_RX_EN_F2_R23(1);
 
 		// Enable
 		write_RESET_R0(0);
-		write_F1F2_MODE_R0(1);
-		write_F1F2_SEL_R0(0);
 		write_FCAL_EN_R0(1);
 
 	}
 
-	void Device::setTxMode_1 () {
-		write_PLL_N_PRE_F1_R4(1); // 0 = Divide by 2; 1 = Divide by 4
-		set_PLL_DEN_F1_R1R3(10);
-		setTxFrequencyBy_1(0);
-	}
+	void Device::setTxMode () {
 
-	bool Device::setTxFrequencyBy_1 (const uint32_t freqIndex) {
-
-		bool result = true;
-
-		// R-divider
-		uint16_t Rmult; // 0 = Reserved; 1 = Bypass; 2 = 2x ... 13 = 13x; 14-31 = Reserved (must be greater than Pre-divider value)
-		uint8_t RpreDivider; // 0 ... 255
-		uint8_t RpostDivider; // 0 ... 255 ???
-
-		// N-divider
-		uint16_t Ninteger; // 0 ... 1023
-		uint32_t Nden; // 0 ... (2^24)-1
-		uint32_t Nnum; // 0 ... (2^24)-1
-
-		// Out-divider
-		uint8_t chDiv1; // 0 = Divide by 4; 1 = Divide by 5; 2 = Divide by 6; 3 = Divide by 7
-		uint8_t chDiv2; // 0 = Divide by 1; 1 = Divide by 2; 2 = Divide by 4; . 6 = Divide by 64
-
-		if ((LOW_TX_FREQ_INDEX_RANGE1 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE1)) {
-			// R-divider
-			RpreDivider = 4;
-			Rmult = 5;
-			RpostDivider = 5;
-			// N-divider
-			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE1);
-			Ninteger = 240 + extDivValue / 10;
-			Nden = 10;
-			Nnum = extDivValue % 10;
-			// Out-divider
-			chDiv1 = 1; // 5
-			chDiv2 = 5; // 32
-		}
-		else if ((LOW_TX_FREQ_INDEX_RANGE2 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE2)) {
-			// R-divider
-			RpreDivider = 5;
-			Rmult = 6;
-			RpostDivider = 6;
-			// N-divider
-			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE2) + 9;
-			Ninteger = 268 + extDivValue / 10;
-			Nden = 10;
-			Nnum = extDivValue % 10;
-			// Out-divider
-			chDiv1 = 0; // 4
-			chDiv2 = 5; // 32
-		}
-		else if ((LOW_TX_FREQ_INDEX_RANGE3 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE3)) {
-			// R-divider
-			RpreDivider = 4;
-			Rmult = 7;
-			RpostDivider = 10;
-			// N-divider
-			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE3) + 1;
-			Ninteger = 320 + extDivValue / 10;
-			Nden = 10;
-			Nnum = extDivValue % 10;
-			// Out-divider
-			chDiv1 = 3; // 7
-			chDiv2 = 4; // 16
-		}
-		else if ((LOW_TX_FREQ_INDEX_RANGE4 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE4)) {
-			// R-divider
-			RpreDivider = 4;
-			Rmult = 6;
-			RpostDivider = 10;
-			// N-divider
-			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE4) + 1;
-			Ninteger = 368 + extDivValue / 10;
-			Nden = 10;
-			Nnum = extDivValue % 10;
-			// Out-divider
-			chDiv1 = 2; // 6
-			chDiv2 = 4; // 16
-		}
-		else if ((LOW_TX_FREQ_INDEX_RANGE5 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE5)) {
-			// R-divider
-			RpreDivider = 4;
-			Rmult = 5;
-			RpostDivider = 10;
-			// N-divider
-			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE5) + 1;
-			Ninteger = 432 + extDivValue / 10;
-			Nden = 10;
-			Nnum = extDivValue % 10;
-			// Out-divider
-			chDiv1 = 1; // 5
-			chDiv2 = 4; // 16
-		}
-		else if ((LOW_TX_FREQ_INDEX_RANGE6 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE6)) {
-			// R-divider
-			RpreDivider = 1;
-			Rmult = 1;
-			RpostDivider = 10;
-			// N-divider
-			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE6) + 7;
-			Ninteger = 537 + extDivValue / 10;
-			Nden = 10;
-			Nnum = extDivValue % 10;
-			// Out-divider
-			chDiv1 = 0; // 4
-			chDiv2 = 4; // 16
-		}
-		else if ((LOW_TX_FREQ_INDEX_RANGE7 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE7)) {
-			// R-divider
-			RpreDivider = 2;
-			Rmult = 7;
-			RpostDivider = 40;
-			// N-divider
-			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE7) + 1;
-			Ninteger = 624 + extDivValue / 10;
-			Nden = 10;
-			Nnum = extDivValue % 10;
-			// Out-divider
-			chDiv1 = 3; // 7
-			chDiv2 = 3; // 8
-		}
-		else if ((LOW_TX_FREQ_INDEX_RANGE8 <= freqIndex) && (freqIndex <= HIGH_TX_FREQ_INDEX_RANGE8)) {
-			// R-divider
-			RpreDivider = 1;
-			Rmult = 3;
-			RpostDivider = 40;
-			// N-divider
-			uint32_t extDivValue = (freqIndex - LOW_TX_FREQ_INDEX_RANGE8) + 1;
-			Ninteger = 736 + extDivValue / 10;
-			Nden = 10;
-			Nnum = extDivValue % 10;
-			// Out-divider
-			chDiv1 = 2; // 6
-			chDiv2 = 3; // 8
-		}
-		else {
-			result = false;
-		}
-
-		if (result) {
-			set_PLL_R_PRE_F1_R5(RpreDivider);
-			set_MULT_F1_R6(Rmult);
-			set_PLL_R_F1_R5(RpostDivider);
-
-			set_PLL_N_F1_R4(Ninteger);
-			set_PLL_DEN_F1_R1R3(Nden);
-			set_PLL_NUM_F1_R1R2(Nnum);
-
-			set_CHDIV1_F1_R6(chDiv1);
-			set_CHDIV2_F1_R6(chDiv2);
-
-			set_FCAL_EN_R0(1);
-
-			writeRegister(6);
-			writeRegister(5);
-			writeRegister(4);
-			writeRegister(3);
-			writeRegister(2);
-			writeRegister(0);
-		}
-		return result;
-	}
-
-	void Device::setTxMode_2 () {
-		write_MULT_F1_R6(5);
-		write_PLL_R_PRE_F1_R5(1);
-		write_PLL_R_F1_R5(2);
-		setTxFrequencyBy_2(0);
-	}
-
-	bool Device::setTxFrequencyBy_2 (const uint32_t freqIndex) {
-
-		const uint32_t startFreq = 30000000;
-		const uint32_t freqStep = 12500;
-
-		return setTxFrequency_2(startFreq + freqIndex * freqStep);
-	}
-
-	bool Device::setTxFrequency_2 (const uint32_t freq) {
-
+		write_F1F2_SEL_R0(0);
 		// todo
-		const uint64_t pddFreq = 50000000;
+		setTxFreqBy(0);
+	}
 
-		const uint64_t minVcoFreq = 4300000000;
-		const uint64_t maxVcoFreq = 5376000000;
+	bool Device::setTxFreqBy (const uint32_t freqIndex) {
 
+		const uint32_t startFreq = TX_MIN_FREQ;
+		const uint32_t freqStep = TX_FREQ_SPACING;
+
+		return setTxFreq(startFreq + freqIndex * freqStep);
+	}
+
+	void Device::setRxMode () {
+
+		write_F1F2_SEL_R0(1);
+		// todo
+		setRxFreqBy(0);
+	}
+
+	bool Device::setRxFreqBy (const uint32_t freqIndex) {
+
+		const uint32_t startFreq = RX_MIN_FREQ;
+		const uint32_t freqStep = RX_FREQ_SPACING;
+
+		return setRxFreq(startFreq + freqIndex * freqStep);
+	}
+
+	bool Device::calcSettingFor (const uint32_t freq, const uint64_t pddFreq, FreqSetting & setting) {
+
+		const uint64_t minVcoFreq = MIN_VCO_FREQ;
+		const uint64_t maxVcoFreq = MAX_VCO_FREQ;
+
+		// Set out ch divider
 		const uint16_t minChdiv = floorf((minVcoFreq * 1.0f) / freq);
 		const uint16_t maxChdiv = ceilf((maxVcoFreq * 1.0f) / freq);
 
@@ -423,16 +246,16 @@ namespace lmx2571 {
 		const uint16_t numberOfChdiv2Values = 7;
 		const uint16_t possibleChdiv2Values[numberOfChdiv2Values] = {1, 2, 4, 8, 16, 32, 64};
 
-		uint16_t chDiv1 = 0;
-		uint16_t chDiv2 = 0;
+		uint16_t chDiv1Value = 0;
+		uint16_t chDiv2Value = 0;
 		uint16_t chdiv = 0;
 		for (uint16_t currChdiv = maxChdiv; currChdiv >= minChdiv; --currChdiv) {
 			for (uint16_t chdiv1Index = 0; chdiv1Index < numberOfChdiv1Values; ++chdiv1Index) {
 				for (uint16_t chdiv2Index = 0; chdiv2Index < numberOfChdiv2Values; ++chdiv2Index) {
 					if (currChdiv == (possibleChdiv1Values[chdiv1Index] * possibleChdiv2Values[chdiv2Index])) {
-						chDiv1 = possibleChdiv1Values[chdiv1Index];
-						chDiv2 = possibleChdiv2Values[chdiv2Index];
-						chdiv = chDiv1 * chDiv2;
+						chDiv1Value = possibleChdiv1Values[chdiv1Index];
+						chDiv2Value = possibleChdiv2Values[chdiv2Index];
+						chdiv = chDiv1Value * chDiv2Value;
 						break;
 					}
 				}
@@ -446,34 +269,101 @@ namespace lmx2571 {
 		if (chdiv == 0)
 			return false;
 
+		// Set N-divider
 		const uint64_t vcoFreq = freq * (uint64_t) chdiv;
 
-		uint16_t preNDivider = 2;
-		float NFactor = vcoFreq * 1.0f / (preNDivider * pddFreq);
+		uint16_t preNDividerValue = 2;
+		float NFactor = vcoFreq * 1.0f / (preNDividerValue * pddFreq);
 		if (NFactor > 16) {
-			preNDivider = 4;
-			NFactor = vcoFreq * 1.0f / (preNDivider * pddFreq);
+			preNDividerValue = 4;
+			NFactor = vcoFreq * 1.0f / (preNDividerValue * pddFreq);
 		}
 
-		const uint32_t pllN = floorf(NFactor);
-		const uint32_t pllNDen = 10000000;
-		const uint32_t pllNNum = (NFactor - pllN) * pllNDen;
+		const uint32_t pllNValue = floorf(NFactor);
+		const uint32_t pllNDenValue = PLL_DEN;
+		const uint32_t pllNNumValue = (NFactor - pllNValue) * pllNDenValue;
+
+		// Write setting
+		setting.preNDivider = (preNDividerValue == 2) ? 0 : 1; // 0 = Divide by 2; 1 = Divide by 4;
+		setting.pllN = pllNValue;
+		setting.pllNNum = pllNNumValue;
+		setting.pllNDen = pllNDenValue;
+		setting.chDiv1 = (chDiv1Value == 4) ? 0 : (chDiv1Value == 5) ? 1 : (chDiv1Value == 6) ? 2 : 3;
+		setting.chDiv2 = (chDiv2Value == 1) ? 0 : (chDiv2Value == 2) ? 1 : (chDiv2Value == 4) ? 2 : (chDiv2Value == 8) ? 3 :
+							(chDiv2Value == 16) ? 4 : (chDiv2Value == 32) ? 5 : (chDiv2Value == 64) ? 6 : 0;
+		return true;
+	}
+
+	bool Device::setTxFreq (const uint32_t freq) {
+
+		// Set pdd frequency
+		uint64_t pddFreq = 0;
+		if ((TX_MIN_FREQ <= freq) && (freq <= TX_MAX_FREQ)) {
+			pddFreq = TX_PDD_FREQ;
+		}
+		else {
+			return false;
+		}
+		FreqSetting setting;
+		bool settingsSuccessful = calcSettingFor(freq, pddFreq, setting);
+
+		if (!settingsSuccessful) {
+			return false;
+		}
+
+		// Set registers
+		set_PLL_N_PRE_F1_R4(setting.preNDivider);
+		set_PLL_N_F1_R4(setting.pllN);
+		set_PLL_NUM_F1_R1R2(setting.pllNNum);
+
+		set_CHDIV1_F1_R6(setting.chDiv1);
+		set_CHDIV2_F1_R6(setting.chDiv2);
 
 		// Write registers
-		write_PLL_N_PRE_F1_R4((preNDivider == 2) ? 0 : 1); // 0 = Divide by 2; 1 = Divide by 4
-		write_PLL_N_F1_R4(pllN);
-		write_PLL_DEN_F1_R1R3(pllNDen);
-		write_PLL_NUM_F1_R1R2(pllNNum);
-
-		uint16_t chDiv1Value = (chDiv1 == 4) ? 0 : (chDiv1 == 5) ? 1 : (chDiv1 == 6) ? 2 : 3;
-		write_CHDIV1_F1_R6(chDiv1Value);
-		uint16_t chDiv2Value = (chDiv2 == 1) ? 0 : (chDiv2 == 2) ? 1 : (chDiv2 == 4) ? 2 : (chDiv2 == 8) ? 3 : (chDiv2 == 16) ? 4 : (chDiv2 == 32) ? 5 : 6;
-		write_CHDIV2_F1_R6(chDiv2Value);
+		writeRegister(6);
+		writeRegister(4);
+		writeRegister(2);
+		writeRegister(1);
 
 		write_FCAL_EN_R0(1);
 
 		return true;
+	}
 
+	bool Device::setRxFreq (const uint32_t freq) {
+
+		// Set pdd frequency
+		uint64_t pddFreq = 0;
+		if ((RX_MIN_FREQ <= freq) && (freq <= RX_MAX_FREQ)) {
+			pddFreq = RX_PDD_FREQ;
+		}
+		else {
+			return false;
+		}
+		FreqSetting setting;
+		bool settingsSuccessful = calcSettingFor(freq, pddFreq, setting);
+
+		if (!settingsSuccessful) {
+			return false;
+		}
+
+		// Set registers
+		set_PLL_N_PRE_F2_R20(setting.preNDivider);
+		set_PLL_N_F2_R20(setting.pllN);
+		set_PLL_NUM_F2_R17R18(setting.pllNNum);
+
+		set_CHDIV1_F2_R22(setting.chDiv1);
+		set_CHDIV2_F2_R22(setting.chDiv2);
+
+		// Write registers
+		writeRegister(22);
+		writeRegister(20);
+		writeRegister(18);
+		writeRegister(17);
+
+		write_FCAL_EN_R0(1);
+
+		return true;
 	}
 
 	Device::Device () {

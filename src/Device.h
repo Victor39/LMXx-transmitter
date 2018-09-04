@@ -14,13 +14,13 @@ namespace lmx2571 {
 			return instance;
 		}
 
-		void startUp();
-		void setTxMode_1 ();
-		bool setTxFrequencyBy_1 (const uint32_t freqIndex);
+		void startUp ();
 
-		void setTxMode_2 ();
-		bool setTxFrequencyBy_2 (const uint32_t freqIndex);
-		bool setTxFrequency_2(const uint32_t freq);
+		void setTxMode ();
+		bool setTxFreqBy (const uint32_t freqIndex);
+
+		void setRxMode ();
+		bool setRxFreqBy (const uint32_t freqIndex);
 
 		void writeRegister (const uint8_t adrr, const uint16_t data);
 		void writeRegister (const uint8_t adrr) {
@@ -36,12 +36,28 @@ namespace lmx2571 {
 		SmartBfArray<Message> m_txMsg;
 		SmartBfArray<Message> m_rxMsg;
 
+		struct FreqSetting {
+			// N-divider
+			uint16_t preNDivider;
+			uint32_t pllN;
+			uint32_t pllNDen;
+			uint32_t pllNNum;
+
+			// CH-divider
+			uint16_t chDiv1;
+			uint16_t chDiv2;
+		};
+
 		Device ();
 		Device (Device const&);
 		void operator= (Device const&);
 		void setBits (uint16_t * reg, uint16_t wstart, uint16_t value, uint16_t rstart, uint16_t num);
 
-	public:
+		bool setTxFreq (const uint32_t freq);
+		bool setRxFreq (const uint32_t freq);
+
+		bool calcSettingFor (const uint32_t freq, const uint64_t pddFreq, FreqSetting & setting);
+
 		// Register 0
 		void set_FCAL_EN_R0 (const uint8_t value) {
 			setBits(&m_registers[0], 0, value, 0, 1);
@@ -423,7 +439,6 @@ namespace lmx2571 {
 			set_OUTBUF_RX_PWR_F2_R23(value);
 			writeRegister(23);
 		}
-
 
 		// Register 24
 		void set_OUTBUF_TX_PWR_F2_R24 (const uint8_t value) {

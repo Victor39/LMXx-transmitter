@@ -13,7 +13,7 @@ int main (void) {
 
 	lmx2571::Device & transmitter = lmx2571::Device::getInstance();
 	transmitter.startUp();
-	transmitter.setTxMode_2();
+
 
 	while (1) {
 
@@ -26,10 +26,23 @@ int main (void) {
 //			}
 //		}
 
+//		uint16_t index = rand()%6240;
+//		transmitter.setTxFreqBy(index);
+//		delayNop(500000);
 
-		uint16_t index = rand()%6240;
-		transmitter.setTxFrequencyBy_2(index);
-		delayNop(500000);
+		transmitter.setTxMode();
+		for (int index = 0; index < 6240; index += 400) {
+			transmitter.setTxFreqBy(index);
+			delayNop(500000);
+		}
+
+
+		transmitter.setRxMode();
+		for (int index = 0; index < 6240; index += 400) {
+			transmitter.setRxFreqBy(index);
+			delayNop(500000);
+		}
+
 
 
 //		transmitter.setTxFrequencyBy_2(1282);
