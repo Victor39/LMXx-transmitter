@@ -56,7 +56,7 @@ namespace lmx2571 {
 		bool setTxFreq (const uint32_t freq);
 		bool setRxFreq (const uint32_t freq);
 
-		bool calcSettingFor (const uint32_t freq, const uint64_t pddFreq, FreqSetting & setting);
+		bool calcSettingFor (const uint32_t freq, const uint64_t pddFreq, const uint16_t preNDividerValue, FreqSetting & setting);
 
 		// Register 0
 		void set_FCAL_EN_R0 (const uint8_t value) {

@@ -3,7 +3,7 @@
 #include "Device.h"
 #include "Message.h"
 
-void delayNop(int n) {
+void delayNop (int n) {
 	for (int j = 0; j < n; ++j) {
 		asm(" nop");
 	}
@@ -14,6 +14,9 @@ int main (void) {
 	lmx2571::Device & transmitter = lmx2571::Device::getInstance();
 	transmitter.startUp();
 
+
+	transmitter.setTxMode();
+//	transmitter.setRxMode();
 
 	while (1) {
 
@@ -30,20 +33,20 @@ int main (void) {
 //		transmitter.setTxFreqBy(index);
 //		delayNop(500000);
 
-		transmitter.setTxMode();
-		for (int index = 0; index < 6240; index += 400) {
-			transmitter.setTxFreqBy(index);
-			delayNop(500000);
-		}
+//		transmitter.setTxMode();
+//		for (int index = 0; index < 6240; ++index) {
+			transmitter.setTxFreqBy(rand()%6240);
+//			transmitter.setTxFreqBy(index);
+			delayNop(20000);
+//		}
 
+//		transmitter.setTxMode();
+//		transmitter.setTxFreqBy(rand()%6240);
 
-		transmitter.setRxMode();
-		for (int index = 0; index < 6240; index += 400) {
-			transmitter.setRxFreqBy(index);
-			delayNop(500000);
-		}
-
-
+//		for (int index = 0; index < 6240; ++index) {
+//			transmitter.setRxFreqBy(rand()%6240);
+//			delayNop(500000);
+//		}
 
 //		transmitter.setTxFrequencyBy_2(1282);
 //		delayNop(500000);
@@ -54,8 +57,6 @@ int main (void) {
 
 //	return (0);
 }
-
-
 
 // Modulation
 // Samples

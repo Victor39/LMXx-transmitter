@@ -20,6 +20,7 @@ namespace lmx2571 {
 #define TX_MAX_FREQ_INDEX ((TX_MAX_FREQ - TX_MIN_FREQ) / TX_FREQ_SPACING)
 
 #define TX_PDD_FREQ	(50000000)
+#define TX_PRE_N_DIVIDER	(4)
 
 // RX parameters
 #define RX_MIN_FREQ	(285000000UL)
@@ -30,11 +31,12 @@ namespace lmx2571 {
 #define RX_MAX_FREQ_INDEX ((RX_MAX_FREQ - RX_MIN_FREQ) / RX_FREQ_SPACING)
 
 #define RX_PDD_FREQ	(80000000)
+#define RX_PRE_N_DIVIDER	(2)
 
 //
 #define MIN_VCO_FREQ	(4300000000)
 #define MAX_VCO_FREQ	(5376000000)
-#define PLL_DEN	(10000000)
+#define PLL_DEN	(10000000UL)
 
 //
 	const uint16_t DEFV_REGISTER[REGISTER_ARR_SIZE] = {
@@ -149,7 +151,6 @@ namespace lmx2571 {
 
 		/// Reset
 		write_RESET_R0(1);
-		uint16_t registr0 = readRegister(0);
 
 		/// Enable FSK SPI FAST mode
 		write_FSK_MODE_SEL0_R34(1);
@@ -178,19 +179,22 @@ namespace lmx2571 {
 		write_PFD_DELAY_F2_R22(4);
 		write_FRAC_ORDER_F2_R20(3);
 
-		// Set tx/rx fractional denominator of the N-divider
+		// Set tx/rx constant parts of N-divider
 		write_PLL_DEN_F1_R1R3(PLL_DEN);
 		write_PLL_DEN_F2_R17R19(PLL_DEN);
+		write_PLL_N_PRE_F1_R4(TX_PRE_N_DIVIDER);
+		write_PLL_N_PRE_F2_R20(RX_PRE_N_DIVIDER);
 
 		// Set tx/rx R-divider
 		write_MULT_F1_R6(5);
 		write_PLL_R_PRE_F1_R5(1);
 		write_PLL_R_F1_R5(2);
+
 		write_MULT_F2_R22(4);
 		write_PLL_R_PRE_F2_R21(1);
 		write_PLL_R_F2_R21(1);
 
-		//
+		// Set RF output pins
 		write_OUTBUF_TX_EN_F1_R7(1);
 		write_OUTBUF_RX_EN_F1_R7(0);
 		write_OUTBUF_TX_EN_F2_R23(0);
@@ -232,14 +236,15 @@ namespace lmx2571 {
 		return setRxFreq(startFreq + freqIndex * freqStep);
 	}
 
-	bool Device::calcSettingFor (const uint32_t freq, const uint64_t pddFreq, FreqSetting & setting) {
+	bool Device::calcSettingFor (const uint32_t freq, const uint64_t pddFreq, const uint16_t preNDividerValue,
+			FreqSetting & setting) {
 
 		const uint64_t minVcoFreq = MIN_VCO_FREQ;
 		const uint64_t maxVcoFreq = MAX_VCO_FREQ;
 
 		// Set out ch divider
-		const uint16_t minChdiv = floorf((minVcoFreq * 1.0f) / freq);
-		const uint16_t maxChdiv = ceilf((maxVcoFreq * 1.0f) / freq);
+		const uint16_t minChdiv = ceilf((minVcoFreq * 1.0f) / freq);
+		const uint16_t maxChdiv = floorf((maxVcoFreq * 1.0f) / freq);
 
 		const uint16_t numberOfChdiv1Values = 4;
 		const uint16_t possibleChdiv1Values[numberOfChdiv1Values] = {4, 5, 6, 7};
@@ -272,14 +277,9 @@ namespace lmx2571 {
 		// Set N-divider
 		const uint64_t vcoFreq = freq * (uint64_t) chdiv;
 
-		uint16_t preNDividerValue = 2;
-		float NFactor = vcoFreq * 1.0f / (preNDividerValue * pddFreq);
-		if (NFactor > 16) {
-			preNDividerValue = 4;
-			NFactor = vcoFreq * 1.0f / (preNDividerValue * pddFreq);
-		}
+		double NFactor = vcoFreq * 1.0 / (preNDividerValue * pddFreq * 1UL);
 
-		const uint32_t pllNValue = floorf(NFactor);
+		const uint32_t pllNValue = floor(NFactor);
 		const uint32_t pllNDenValue = PLL_DEN;
 		const uint32_t pllNNumValue = (NFactor - pllNValue) * pllNDenValue;
 
@@ -305,14 +305,13 @@ namespace lmx2571 {
 			return false;
 		}
 		FreqSetting setting;
-		bool settingsSuccessful = calcSettingFor(freq, pddFreq, setting);
+		bool settingsSuccessful = calcSettingFor(freq, pddFreq, TX_PRE_N_DIVIDER, setting);
 
 		if (!settingsSuccessful) {
 			return false;
 		}
 
 		// Set registers
-		set_PLL_N_PRE_F1_R4(setting.preNDivider);
 		set_PLL_N_F1_R4(setting.pllN);
 		set_PLL_NUM_F1_R1R2(setting.pllNNum);
 
@@ -341,14 +340,13 @@ namespace lmx2571 {
 			return false;
 		}
 		FreqSetting setting;
-		bool settingsSuccessful = calcSettingFor(freq, pddFreq, setting);
+		bool settingsSuccessful = calcSettingFor(freq, pddFreq, RX_PRE_N_DIVIDER, setting);
 
 		if (!settingsSuccessful) {
 			return false;
 		}
 
 		// Set registers
-		set_PLL_N_PRE_F2_R20(setting.preNDivider);
 		set_PLL_N_F2_R20(setting.pllN);
 		set_PLL_NUM_F2_R17R18(setting.pllNNum);
 
