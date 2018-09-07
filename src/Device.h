@@ -1,7 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include <src/Message.h>
-#include <bitset>
+#include "Message.h"
 
 namespace lmx2571 {
 
@@ -30,11 +29,14 @@ namespace lmx2571 {
 
 	private:
 
-		// Redisters
+		Message m_txMsg;
+		Message m_rxMsg;
+
+		// Registers
 		uint16_t m_registers[REGISTER_ARR_SIZE];
 
-		SmartBfArray<Message> m_txMsg;
-		SmartBfArray<Message> m_rxMsg;
+		uint8_t m_txBuffer[3];
+		uint8_t m_rxBuffer[3];
 
 		struct FreqSetting {
 			// N-divider
@@ -51,6 +53,10 @@ namespace lmx2571 {
 		Device ();
 		Device (Device const&);
 		void operator= (Device const&);
+
+		void initSpi ();
+		void spiTransfer (const uint8_t* dataTx, uint8_t* dataRx, const uint16_t len);
+
 		void setBits (uint16_t * reg, uint16_t wstart, uint16_t value, uint16_t rstart, uint16_t num);
 
 		bool setTxFreq (const uint32_t freq);

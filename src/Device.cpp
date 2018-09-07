@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <math.h>
+#include <string.h>
 #include <src/Device.h>
 #include "soc_OMAPL138.h"
 #include "hw_psc_OMAPL138.h"
@@ -37,7 +38,7 @@ namespace lmx2571 {
 #define MIN_VCO_FREQ	(4300000000)
 #define MAX_VCO_FREQ	(5376000000)
 #define PLL_DEN	(10000000UL)
-
+#define SPI_CS						4
 //
 	const uint16_t DEFV_REGISTER[REGISTER_ARR_SIZE] = {
 	// 0 ... 9
@@ -55,96 +56,21 @@ namespace lmx2571 {
 			// 60
 			0x4000};
 
-	/******************************************************************************
-	 **                      INTERNAL MACRO DEFINITIONS
-	 *******************************************************************************/
-#define CHAR_LENGTH             0x8
-#define CS						4
+	void Device::spiTransfer (const uint8_t* dataTx, uint8_t* dataRx, const uint16_t len) {
 
-	/******************************************************************************
-	 **                      INTERNAL FUNCTION PROTOTYPES
-	 *******************************************************************************/
-	void SPIIsr (void);
-	static void SpiTransfer (unsigned char cs);
+		SPIDat1Config(SOC_SPI_0_REGS, (SPI_CSHOLD | SPI_DATA_FORMAT0), (1 << SPI_CS));
 
-	/******************************************************************************
-	 **                      INTERNAL VARIABLE DEFINITIONS
-	 *******************************************************************************/
-	volatile unsigned int flag = 1;
-	unsigned int tx_len;
-	unsigned int rx_len;
-	unsigned char vrf_data[260];
-	unsigned char tx_data[260];
-	volatile unsigned char rx_data[260];
-	unsigned char *p_tx;
-	volatile unsigned char *p_rx;
-	volatile unsigned char StatusResponseMessage[10];
+		for (uint16_t i = 0; i < len; i++) {
+			while (!SPIIntStatus(SOC_SPI_0_REGS, SPI_TRANSMIT_INT))
+				;
+			SPITransmitData1(SOC_SPI_0_REGS, dataTx[i]);
 
-	/*
-	 ** Data transmission and receiption SPIIsr
-	 **
-	 */
-	void SPIIsr (void) {
-		unsigned int intCode = 0;
-
-#ifdef _TMS320C6X
-		IntEventClear(SYS_INT_SPI0_INT);
-#else
-		IntSystemStatusClear(56);
-#endif
-
-		intCode = SPIInterruptVectorGet(SOC_SPI_0_REGS);
-
-		while (intCode) {
-			if (intCode == SPI_TX_BUF_EMPTY) {
-				tx_len--;
-				SPITransmitData1(SOC_SPI_0_REGS, *p_tx);
-				p_tx++;
-				if (!tx_len) {
-					SPIIntDisable(SOC_SPI_0_REGS, SPI_TRANSMIT_INT);
-				}
-			}
-
-			if (intCode == SPI_RECV_FULL) {
-				rx_len--;
-				*p_rx = (char) SPIDataReceive(SOC_SPI_0_REGS);
-				if (*p_rx != 0) {
-					asm(" nop");
-				}
-
-				p_rx++;
-				if (!rx_len) {
-					flag = 0;
-					SPIIntDisable(SOC_SPI_0_REGS, SPI_RECV_INT);
-				}
-			}
-
-			intCode = SPIInterruptVectorGet(SOC_SPI_0_REGS);
+			while (!SPIIntStatus(SOC_SPI_0_REGS, SPI_RECV_INT))
+				;
+			dataRx[i] = (uint8_t) SPIDataReceive(SOC_SPI_0_REGS);
 		}
-	}
 
-	/*
-	 ** Enables SPI Transmit and Receive interrupt.
-	 ** Deasserts Chip Select line.
-	 */
-	static void SpiTransfer (unsigned char cs) {
-		p_tx = &tx_data[0];
-		p_rx = &rx_data[0];
-		SPIIntEnable(SOC_SPI_0_REGS, (SPI_RECV_INT | SPI_TRANSMIT_INT));
-		while (flag)
-			;
-		flag = 1;
-		/* Deasserts the CS pin(line) */
-		SPIDat1Config(SOC_SPI_0_REGS, SPI_DATA_FORMAT0, cs);
-	}
-
-	static void sendCommand (uint16_t length) {
-
-		tx_len = length;
-		rx_len = length;
-
-		SPIDat1Config(SOC_SPI_0_REGS, (SPI_CSHOLD | SPI_DATA_FORMAT0), 1 << CS);
-		SpiTransfer(0);
+		SPIDat1Config(SOC_SPI_0_REGS, (SPI_DATA_FORMAT0), (1 << SPI_CS));
 	}
 
 	void Device::startUp () {
@@ -182,8 +108,8 @@ namespace lmx2571 {
 		// Set tx/rx constant parts of N-divider
 		write_PLL_DEN_F1_R1R3(PLL_DEN);
 		write_PLL_DEN_F2_R17R19(PLL_DEN);
-		write_PLL_N_PRE_F1_R4(TX_PRE_N_DIVIDER);
-		write_PLL_N_PRE_F2_R20(RX_PRE_N_DIVIDER);
+		write_PLL_N_PRE_F1_R4(1 /*TX_PRE_N_DIVIDER*/);
+		write_PLL_N_PRE_F2_R20(0 /*RX_PRE_N_DIVIDER*/);
 
 		// Set tx/rx R-divider
 		write_MULT_F1_R6(5);
@@ -366,72 +292,7 @@ namespace lmx2571 {
 
 	Device::Device () {
 
-		// SPI
-
-		/* Waking up the SPI0 instance. */
-		PSCModuleControl(SOC_PSC_0_REGS, HW_PSC_SPI0, PSC_POWERDOMAIN_ALWAYS_ON,
-		PSC_MDCTL_NEXT_ENABLE);
-
-		/* Performing the Pin Multiplexing for SPI0. */
-		SPIPinMuxSetup(0);
-
-		/* Using the Chip Select(CS) 4 pin of SPI0 to communicate with the LMX2571. */
-		SPI0CSPinMuxSetup(CS);
-
-		/* Enable use of SPI0 interrupts. */
-		// Initialize the DSP interrupt controller
-		IntDSPINTCInit();
-
-		// Register the ISR in the vector table
-		IntRegister(C674X_MASK_INT4, SPIIsr);
-
-		// Map system interrupt to the DSP maskable interrupt
-		IntEventMap(C674X_MASK_INT4, SYS_INT_SPI0_INT);
-
-		// Enable the DSP maskable interrupt
-		IntEnable(C674X_MASK_INT4);
-
-		// Enable DSP interrupts globally
-		IntGlobalEnable();
-
-		/* Configuring and enabling the SPI0 instance. */
-		SPIReset(SOC_SPI_0_REGS);
-
-		SPIOutOfReset(SOC_SPI_0_REGS);
-
-		SPIModeConfigure(SOC_SPI_0_REGS, SPI_MASTER_MODE);
-
-		SPIClkConfigure(SOC_SPI_0_REGS, 150000000, 1000000, SPI_DATA_FORMAT0);
-
-		/* value to configure SMIO,SOMI,CLK and CS pin as functional pin */
-		unsigned int controlRegIdx = 0;
-		unsigned int controlReg0 = 0x00000E00;
-		controlReg0 |= (1 << CS);
-		SPIPinControl(SOC_SPI_0_REGS, controlRegIdx, 0, &controlReg0);
-
-		SPIDefaultCSSet(SOC_SPI_0_REGS, (1 << CS));
-
-		/* Configures SPI Data Format Register */
-		/* Configures the polarity and phase of SPI clock */
-		SPIConfigClkFormat(SOC_SPI_0_REGS, (SPI_CLK_POL_HIGH | SPI_CLK_INPHASE), SPI_DATA_FORMAT0);
-
-		/* Configures SPI to transmit MSB bit First during data transfer */
-		SPIShiftMsbFirst(SOC_SPI_0_REGS, SPI_DATA_FORMAT0);
-
-		/* Sets the Charcter length */
-		SPICharLengthSet(SOC_SPI_0_REGS, CHAR_LENGTH, SPI_DATA_FORMAT0);
-
-		/* Selects the SPI Data format register to used and Sets CSHOLD
-		 * to assert CS pin(line)
-		 */
-		SPIDat1Config(SOC_SPI_0_REGS, (SPI_CSHOLD | SPI_DATA_FORMAT0), (1 << CS));
-
-		/* map interrupts to interrupt line INT1 */
-		SPIIntLevelSet(SOC_SPI_0_REGS, SPI_RECV_INTLVL | SPI_TRANSMIT_INTLVL);
-
-		/* Enable SPI communication */
-		SPIEnable(SOC_SPI_0_REGS);
-
+		initSpi();
 		memcpy(m_registers, DEFV_REGISTER, REGISTER_ARR_SIZE * (sizeof(m_registers[0])));
 	}
 
@@ -444,23 +305,94 @@ namespace lmx2571 {
 
 	void Device::writeRegister (const uint8_t adrr, const uint16_t data) {
 
-		m_txMsg().rw = 0;
-		m_txMsg().address = adrr;
-		m_txMsg().data = data;
-		m_txMsg.pack(tx_data);
-		sendCommand(m_txMsg.sizeBytes());
+		m_txMsg.rw() = 0;
+		m_txMsg.address() = adrr;
+		m_txMsg.data() = data;
+		m_txMsg.write(m_txBuffer);
+
+		spiTransfer(m_txBuffer, m_rxBuffer, 3);
 	}
 
 	uint16_t Device::readRegister (const uint8_t adrr) {
-		m_txMsg().rw = 1;
-		m_txMsg().address = adrr;
+		m_txMsg.rw() = 1;
+		m_txMsg.address() = adrr;
+		m_txMsg.write(m_txBuffer);
 
-		m_txMsg.pack(tx_data);
+		spiTransfer(m_txBuffer, m_rxBuffer, m_txMsg.size());
 
-		sendCommand(m_rxMsg.sizeBytes());
-		m_rxMsg.extract((uint8_t*) rx_data);
+		m_rxMsg.read(m_rxBuffer);
 
-		return m_rxMsg().data.value<uint16_t>();
+		return m_rxMsg.data();
+	}
+
+	void Device::initSpi () {
+
+		// SPI
+		/* Waking up the SPI0 instance. */
+		PSCModuleControl(SOC_PSC_0_REGS, HW_PSC_SPI0, PSC_POWERDOMAIN_ALWAYS_ON,
+		PSC_MDCTL_NEXT_ENABLE);
+
+		/* Performing the Pin Multiplexing for SPI0. */
+		SPIPinMuxSetup(0);
+
+		/* Using the Chip Select(CS) 4 pin of SPI0 to communicate with the LMX2571. */
+		SPI0CSPinMuxSetup(SPI_CS);
+
+//		/* Enable use of SPI0 interrupts. */
+//		// Initialize the DSP interrupt controller
+//		IntDSPINTCInit();
+//
+//		// Register the ISR in the vector table
+//		IntRegister(C674X_MASK_INT4, SPIIsr);
+//
+//		// Map system interrupt to the DSP maskable interrupt
+//		IntEventMap(C674X_MASK_INT4, SYS_INT_SPI0_INT);
+//
+//		// Enable the DSP maskable interrupt
+//		IntEnable(C674X_MASK_INT4);
+//
+//		// Enable DSP interrupts globally
+//		IntGlobalEnable();
+
+		/* Configuring and enabling the SPI0 instance. */
+		SPIReset(SOC_SPI_0_REGS);
+
+		SPIOutOfReset(SOC_SPI_0_REGS);
+
+		SPIModeConfigure(SOC_SPI_0_REGS, SPI_MASTER_MODE);
+
+		SPIClkConfigure(SOC_SPI_0_REGS, 150000000, 10000000, SPI_DATA_FORMAT0);
+
+		/* value to configure SMIO,SOMI,CLK and CS pin as functional pin */
+		unsigned int controlRegIdx = 0;
+		unsigned int controlReg0 = 0x00000E00;
+		controlReg0 |= (1 << SPI_CS);
+		SPIPinControl(SOC_SPI_0_REGS, controlRegIdx, 0, &controlReg0);
+
+		SPIDefaultCSSet(SOC_SPI_0_REGS, (1 << SPI_CS));
+
+		/* Configures SPI Data Format Register */
+		/* Configures the polarity and phase of SPI clock */
+		SPIConfigClkFormat(SOC_SPI_0_REGS, (SPI_CLK_POL_HIGH | SPI_CLK_INPHASE), SPI_DATA_FORMAT0);
+
+		/* Configures SPI to transmit MSB bit First during data transfer */
+		SPIShiftMsbFirst(SOC_SPI_0_REGS, SPI_DATA_FORMAT0);
+
+		/* Sets the Charcter length */
+		const uint32_t charcterLength = 0x8;
+		SPICharLengthSet(SOC_SPI_0_REGS, charcterLength, SPI_DATA_FORMAT0);
+
+		/* Selects the SPI Data format register to used and Sets CSHOLD
+		 * to assert CS pin(line)
+		 */
+		SPIDat1Config(SOC_SPI_0_REGS, (SPI_CSHOLD | SPI_DATA_FORMAT0), (1 << SPI_CS));
+
+		/* map interrupts to interrupt line INT1 */
+		SPIIntLevelSet(SOC_SPI_0_REGS, SPI_RECV_INTLVL | SPI_TRANSMIT_INTLVL);
+
+		/* Enable SPI communication */
+		SPIEnable(SOC_SPI_0_REGS);
+
 	}
 
 } /* namespace Lmx2571 */

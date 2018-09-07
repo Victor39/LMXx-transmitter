@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <cstdlib>
+#include <stdlib.h>
 #include "Device.h"
 #include "Message.h"
 
@@ -15,8 +15,8 @@ int main (void) {
 	transmitter.startUp();
 
 
-	transmitter.setTxMode();
-//	transmitter.setRxMode();
+//	transmitter.setTxMode();
+	transmitter.setRxMode();
 
 	while (1) {
 
@@ -35,17 +35,17 @@ int main (void) {
 
 //		transmitter.setTxMode();
 //		for (int index = 0; index < 6240; ++index) {
-			transmitter.setTxFreqBy(rand()%6240);
+//			transmitter.setTxFreqBy(rand()%6240);
 //			transmitter.setTxFreqBy(index);
-			delayNop(20000);
+//			delayNop(200000);
 //		}
 
 //		transmitter.setTxMode();
 //		transmitter.setTxFreqBy(rand()%6240);
 
 //		for (int index = 0; index < 6240; ++index) {
-//			transmitter.setRxFreqBy(rand()%6240);
-//			delayNop(500000);
+			transmitter.setRxFreqBy(rand()%6240);
+			delayNop(500000);
 //		}
 
 //		transmitter.setTxFrequencyBy_2(1282);
